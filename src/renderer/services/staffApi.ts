@@ -1,0 +1,36 @@
+import { apiGet, apiPost, apiPut, apiDelete } from "./api";
+
+export interface Staff {
+  user_uuid: string;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
+export async function getStaff(): Promise<Staff[]> {
+  const res = await apiGet("/staff");
+  return Array.isArray(res) ? res : res?.data ?? [];
+}
+
+export async function createStaff(data: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+}): Promise<Staff> {
+  return await apiPost("/staff", data);
+}
+
+// ✏️ UPDATE
+export async function updateStaff(
+  uuid: string,
+  data: Partial<Staff> & { password?: string }
+): Promise<Staff> {
+  return await apiPut(`/staff/${uuid}`, data);
+}
+
+// 🗑️ DELETE
+export async function deleteStaff(uuid: string): Promise<void> {
+  await apiDelete(`/staff/${uuid}`);
+}
