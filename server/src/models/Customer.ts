@@ -1,5 +1,5 @@
-import db from '../database/connection.js';
-import type { Customer, CustomerLedger, CustomerLedgerWithBalance, CustomerAging, CustomerReminder, CustomerSummary } from '../types/index.js';
+import db from '../database/connection';
+import type { Customer, CustomerLedger, CustomerLedgerWithBalance, CustomerAging, CustomerReminder, CustomerSummary } from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
 
 export class CustomerModel {

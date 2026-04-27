@@ -1,5 +1,5 @@
-import db from '../database/connection.js';
-import type { Cart, CartItem, CartWithItems, CartSummary} from '../types/index.js';
+import db from '../database/connection';
+import type { Cart, CartItem, CartWithItems, CartSummary} from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
 
 export class CartModel {

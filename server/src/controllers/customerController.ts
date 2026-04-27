@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { CustomerModel } from '../models/Customer.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { CustomerModel } from '../models/Customer';
+import type { AuthRequest } from '../middleware/auth';
 
 export class CustomerController {
   // Create new customer

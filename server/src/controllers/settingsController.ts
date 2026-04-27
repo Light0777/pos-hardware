@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { SettingsModel } from '../models/Settings.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { SettingsModel } from '../models/Settings';
+import type { AuthRequest } from '../middleware/auth';
 
 export class SettingsController {
   // GET settings

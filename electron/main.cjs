@@ -8,7 +8,7 @@ let serverProcess = null;
 
 function startBackend() {
   const isDev = !app.isPackaged;
-  let backendPath;  
+  let backendPath;
 
   console.log(`Starting backend in ${isDev ? 'development' : 'production'} mode`);
   console.log('App is packaged:', app.isPackaged);
@@ -107,6 +107,9 @@ function createWindow() {
     console.log(`Looking for frontend at: ${indexPath}`);
     if (fs.existsSync(indexPath)) {
       mainWindow.loadFile(indexPath);
+      mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.executeJavaScript(`window.location.hash = '#/'`);
+      });
     } else {
       console.error(`Frontend not found at: ${indexPath}`);
       app.quit();

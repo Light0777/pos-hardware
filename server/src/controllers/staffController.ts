@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { UserModel } from '../models/User.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { UserModel } from '../models/User';
+import type { AuthRequest } from '../middleware/auth';
 
 export class StaffController {
   // Create new staff member

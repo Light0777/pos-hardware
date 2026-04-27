@@ -1,5 +1,5 @@
-import db from '../database/connection.js';
-import type { Setting } from '../types/index.js';
+import db from '../database/connection';
+import type { Setting } from '../types/index';
 
 export class SettingsModel {
   // Get settings (always returns one record)

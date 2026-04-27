@@ -1,5 +1,5 @@
-import db from '../database/connection.js';
-import type { Supplier } from '../types/index.js';
+import db from '../database/connection';
+import type { Supplier } from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
 
 export class SupplierModel {

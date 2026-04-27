@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { ProductModel } from '../models/Product.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { ProductModel } from '../models/Product';
+import type { AuthRequest } from '../middleware/auth';
 
 export class ProductController {
   // Helper to safely get query parameter as string

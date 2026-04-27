@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { ReportModel } from '../models/Report.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { ReportModel } from '../models/Report';
+import type { AuthRequest } from '../middleware/auth';
 
 export class ReportController {
   // Dashboard summary

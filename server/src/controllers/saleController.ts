@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { CartModel } from '../models/Cart.js';
-import { SaleModel } from '../models/Sale.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { CartModel } from '../models/Cart';
+import { SaleModel } from '../models/Sale';
+import type { AuthRequest } from '../middleware/auth';
 
 export class SaleController {
   // Checkout - Convert cart to sale

@@ -2,19 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { runMigrations } from './database/migrations/001_initial.js';
+import { runMigrations } from './database/migrations/001_initial';
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import productRoutes from './routes/products.js';
-import cartRoutes from './routes/carts.js';
-import saleRoutes from './routes/sales.js';
-import settingsRoutes from './routes/settings.js';
-import customerRoutes from './routes/customers.js';
-import purchaseRoutes from './routes/purchases.js';
-import supplierRoutes from './routes/suppliers.js';
-import reportRoutes from './routes/reports.js';
-import staffRoutes from './routes/staff.js';
+import authRoutes from './routes/auth';
+import productRoutes from './routes/products';
+import cartRoutes from './routes/carts';
+import saleRoutes from './routes/sales';
+import settingsRoutes from './routes/settings';
+import customerRoutes from './routes/customers';
+import purchaseRoutes from './routes/purchases';
+import supplierRoutes from './routes/suppliers';
+import reportRoutes from './routes/reports';
+import staffRoutes from './routes/staff';
 
 // Load environment variables - simplified for CommonJS
 dotenv.config();

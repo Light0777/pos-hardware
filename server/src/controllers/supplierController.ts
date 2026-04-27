@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { SupplierModel } from '../models/Supplier.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { SupplierModel } from '../models/Supplier';
+import type { AuthRequest } from '../middleware/auth';
 
 export class SupplierController {
   // List all suppliers

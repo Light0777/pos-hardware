@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import { CartModel } from '../models/Cart.js';
-import { ProductModel } from '../models/Product.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { CartModel } from '../models/Cart';
+import { ProductModel } from '../models/Product';
+import type { AuthRequest } from '../middleware/auth';
 
 export class CartController {
   // Create new cart

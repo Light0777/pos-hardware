@@ -2,9 +2,9 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { UserModel } from '../models/User.js';
-import db from '../database/connection.js';
-import type { AuthRequest } from '../middleware/auth.js';
+import { UserModel } from '../models/User';
+import db from '../database/connection';
+import type { AuthRequest } from '../middleware/auth';
 
 export class AuthController {
   // Register new user and create settings
