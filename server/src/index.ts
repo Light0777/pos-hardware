@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { runMigrations } from './database/migrations/001_initial';
 import { addHsnCode } from './database/migrations/002_hsn';
+import { addAutoPrint } from './database/migrations/003_auto_print';
+import printingRoutes from './routes/printing';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -33,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 // Run database migrations
 runMigrations();
 addHsnCode();
+addAutoPrint();
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -45,6 +48,7 @@ app.use('/api/purchases', purchaseRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/printing', printingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

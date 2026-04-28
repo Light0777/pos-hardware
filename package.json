@@ -59,6 +59,7 @@
     "better-sqlite3": "^12.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "esc-pos-encoder": "^3.0.0",
     "express": "^5.2.1",
     "ionicons": "^8.0.13",
     "jsonwebtoken": "^9.0.3",

@@ -4,73 +4,96 @@ export class ReportModel {
   // Dashboard summary
   static getDashboard() {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // Today's sales
+    // Get today's date in local time (IST)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStr = today.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+    // Get month start date in local time
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStartStr = monthStart.toISOString().split('T')[0];
+
+    // Alternative: Use SQLite's date functions with localtime
+    // Today's sales - using DATE() with localtime
     const todaySales = (db.prepare(`
-      SELECT COALESCE(SUM(grand_total), 0) as total 
-      FROM sales 
-      WHERE created_at >= ?
-    `).get(today) as any).total;
+        SELECT COALESCE(SUM(grand_total), 0) as total 
+        FROM sales 
+        WHERE DATE(created_at, 'localtime') = DATE('now', 'localtime')
+    `).get() as any).total;
 
-    // This month's sales
+    // This month's sales - using DATE() with localtime
     const monthSales = (db.prepare(`
-      SELECT COALESCE(SUM(grand_total), 0) as total 
-      FROM sales 
-      WHERE created_at >= ?
-    `).get(monthStart) as any).total;
+        SELECT COALESCE(SUM(grand_total), 0) as total 
+        FROM sales 
+        WHERE strftime('%Y-%m', created_at, 'localtime') = strftime('%Y-%m', 'now', 'localtime')
+    `).get() as any).total;
+
+    // Alternative method using string comparison (more reliable)
+    // Today's sales alternative method
+    const todaySalesAlt = (db.prepare(`
+        SELECT COALESCE(SUM(grand_total), 0) as total 
+        FROM sales 
+        WHERE created_at LIKE '${todayStr}%'
+    `).get() as any).total;
 
     // Total sales (all time)
     const totalSales = (db.prepare(`
-      SELECT COALESCE(SUM(grand_total), 0) as total 
-      FROM sales
+        SELECT COALESCE(SUM(grand_total), 0) as total 
+        FROM sales
     `).get() as any).total;
 
     // Total orders
     const totalOrders = (db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM sales
+        SELECT COUNT(*) as count 
+        FROM sales
     `).get() as any).count;
 
     // Recent sales (last 5)
     const recentSales = db.prepare(`
-      SELECT s.*, c.name as customer_name
-      FROM sales s
-      LEFT JOIN customers c ON s.customer_uuid = c.customer_uuid
-      ORDER BY s.created_at DESC
-      LIMIT 5
+        SELECT s.*, c.name as customer_name
+        FROM sales s
+        LEFT JOIN customers c ON s.customer_uuid = c.customer_uuid
+        ORDER BY s.created_at DESC
+        LIMIT 5
     `).all();
 
     // Low stock products (stock < 10)
     const lowStock = db.prepare(`
-      SELECT * FROM products 
-      WHERE stock < 10
-      ORDER BY stock ASC
+        SELECT * FROM products 
+        WHERE stock < 10
+        ORDER BY stock ASC
     `).all();
 
     // Top 5 products by quantity sold
     const topProducts = db.prepare(`
-      SELECT 
-        p.name,
-        p.product_uuid,
-        SUM(si.quantity) as total_qty
-      FROM sale_items si
-      JOIN sales s ON si.sale_uuid = s.sale_uuid
-      LEFT JOIN products p ON si.product_uuid = p.product_uuid
-      GROUP BY si.product_uuid
-      ORDER BY total_qty DESC
-      LIMIT 5
+        SELECT 
+            p.name,
+            p.product_uuid,
+            SUM(si.quantity) as total_qty
+        FROM sale_items si
+        JOIN sales s ON si.sale_uuid = s.sale_uuid
+        LEFT JOIN products p ON si.product_uuid = p.product_uuid
+        GROUP BY si.product_uuid
+        ORDER BY total_qty DESC
+        LIMIT 5
     `).all();
 
     // Recent purchases (last 5)
     const recentPurchases = db.prepare(`
-      SELECT p.*, s.name as supplier_name
-      FROM purchases p
-      LEFT JOIN suppliers s ON p.supplier_uuid = s.supplier_uuid
-      ORDER BY p.created_at DESC
-      LIMIT 5
+        SELECT p.*, s.name as supplier_name
+        FROM purchases p
+        LEFT JOIN suppliers s ON p.supplier_uuid = s.supplier_uuid
+        ORDER BY p.created_at DESC
+        LIMIT 5
     `).all();
+
+    console.log('Debug - Dashboard calculations:', {
+      todayStr,
+      todaySales,
+      monthStartStr,
+      monthSales,
+      totalSales
+    });
 
     return {
       today_sales: todaySales || 0,
@@ -232,7 +255,7 @@ export class ReportModel {
     return dates.map(date => {
       const revenue = salesMap.get(date) || 0;
       const cost = purchasesMap.get(date) || 0;
-      
+
       return {
         date,
         revenue: Math.round(revenue * 100) / 100,

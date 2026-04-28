@@ -31,7 +31,7 @@ export default function Settings() {
     try {
       const res = await getSettings();
       console.log("Settings loaded:", res);
-      
+
       // Check if response has data
       if (res && Object.keys(res).length > 0) {
         setData(res);
@@ -70,7 +70,7 @@ export default function Settings() {
     setSaving(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       await saveSettings(data);
       setSuccess("Settings saved successfully!");
@@ -134,6 +134,22 @@ export default function Settings() {
         >
           <IonIcon icon={refreshOutline} className="text-xl" />
           <span>Refresh</span>
+        </button>
+
+
+      </div>
+      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mt-2">
+        <div className="text-start">
+          <p className="text-sm font-medium text-gray-700">Auto Print Bill</p>
+          <p className="text-xs text-gray-500">Automatically print bill after checkout</p>
+        </div>
+        <button
+          onClick={() => setData({ ...data, auto_print: data.auto_print ? 0 : 1 })}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${data.auto_print ? 'bg-green-600' : 'bg-gray-300'
+            }`}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.auto_print ? 'translate-x-6' : 'translate-x-1'
+            }`} />
         </button>
       </div>
 

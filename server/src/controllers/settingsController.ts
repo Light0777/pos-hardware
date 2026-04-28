@@ -14,9 +14,9 @@ export class SettingsController {
       });
     } catch (error) {
       console.error('Get settings error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Internal server error' 
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
       });
     }
   };
@@ -24,12 +24,12 @@ export class SettingsController {
   // CREATE or UPDATE settings
   static save = (req: AuthRequest, res: Response): void => {
     try {
-      const { shop_name, mobile, address, gstin, invoice_prefix } = req.body;
+      const { shop_name, mobile, address, gstin, invoice_prefix, auto_print } = req.body;
 
       if (!shop_name) {
-        res.status(400).json({ 
-          success: false, 
-          error: 'Shop name is required' 
+        res.status(400).json({
+          success: false,
+          error: 'Shop name is required'
         });
         return;
       }
@@ -40,6 +40,7 @@ export class SettingsController {
         address: address ? String(address) : undefined,
         gstin: gstin ? String(gstin) : undefined,
         invoice_prefix: invoice_prefix ? String(invoice_prefix) : undefined,
+        auto_print: auto_print !== undefined ? Number(auto_print) : undefined,
       });
 
       res.json({
@@ -48,9 +49,9 @@ export class SettingsController {
       });
     } catch (error) {
       console.error('Save settings error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Internal server error' 
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
       });
     }
   };
@@ -62,9 +63,9 @@ export class SettingsController {
       const settings = SettingsModel.update(updates);
 
       if (!settings) {
-        res.status(404).json({ 
-          success: false, 
-          message: 'Settings not found' 
+        res.status(404).json({
+          success: false,
+          message: 'Settings not found'
         });
         return;
       }
@@ -75,9 +76,9 @@ export class SettingsController {
       });
     } catch (error) {
       console.error('Update settings error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Internal server error' 
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
       });
     }
   };

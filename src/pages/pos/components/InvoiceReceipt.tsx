@@ -1,12 +1,33 @@
 import { IonIcon } from '@ionic/react';
 import { printOutline, closeOutline } from 'ionicons/icons';
+import { useEffect } from 'react';
 
 interface InvoiceReceiptProps {
   invoice: any;
   onClose: () => void;
+  autoPrint?: boolean;
 }
 
-export default function InvoiceReceipt({ invoice, onClose }: InvoiceReceiptProps) {
+export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceReceiptProps) {
+
+  // useEffect(() => {
+  //   if (autoPrint) {
+  //     // Small delay to let the receipt render first
+  //     const timer = setTimeout(() => {
+  //       window.print();
+  //     }, 500);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [autoPrint]);
+
+  useEffect(() => {
+    if (autoPrint) {
+      const timer = setTimeout(() => {
+        handlePrint(); // Use the same async function
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint, invoice]); // Add invoice to dependencies
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -27,8 +48,39 @@ export default function InvoiceReceipt({ invoice, onClose }: InvoiceReceiptProps
     }).format(num || 0);
   };
 
-  const handlePrint = () => {
-    window.print();
+  // const handlePrint = () => {
+  //   window.print();
+  // };
+
+  const handlePrint = async () => {
+    // Try thermal printer first
+    try {
+      // Your backend runs on port 3000
+      const response = await fetch('http://localhost:3000/api/printing/print-receipt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice)
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.printed) {
+        // Success! Receipt sent to thermal printer
+        console.log('✅ Printed to thermal printer');
+        // You can show a success toast/notification here
+        onClose(); // Close the receipt modal after successful print
+      } else if (result.useBrowserPrint || result.fallback) {
+        // Printer not available, fall back to browser print
+        console.warn('⚠️ Thermal printer not available, using browser print:', result.message);
+        window.print(); // Fallback to browser print dialog
+      }
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      // Fallback to browser print on network error
+      window.print();
+    }
   };
 
   const dashes = '--------------------------------';
@@ -36,7 +88,7 @@ export default function InvoiceReceipt({ invoice, onClose }: InvoiceReceiptProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 print:static print:bg-white print:p-0 print:block">
-      
+
       {/* Action Buttons - Hidden when printing */}
       <div className="print:hidden fixed top-4 right-4 flex gap-2 z-50">
         <button
@@ -138,8 +190,8 @@ export default function InvoiceReceipt({ invoice, onClose }: InvoiceReceiptProps
         {/* Items */}
         {(invoice.items || []).map((item: any, index: number) => (
           <div key={index} style={{ marginBottom: '6px', fontSize: '11px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 4px'}}>
-              <span style={{  fontWeight: 'bold' }}>{item.name}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 4px' }}>
+              <span style={{ fontWeight: 'bold' }}>{item.name}</span>
               <span>{item.qty}</span>
               <span>{formatNumber(item.price)}</span>
               <span style={{ fontWeight: 'bold' }}>{formatNumber(item.total)}</span>

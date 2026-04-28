@@ -198,6 +198,7 @@ export interface Setting {
   invoice_prefix: string;
   created_at: string;
   updated_at: string;
+  auto_print?: number; 
 }
 
 export interface Cart {

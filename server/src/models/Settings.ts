@@ -5,14 +5,14 @@ export class SettingsModel {
   // Get settings (always returns one record)
   static get(): Setting {
     let settings = db.prepare('SELECT * FROM settings LIMIT 1').get() as Setting | undefined;
-    
+
     if (!settings) {
       // Create default settings if none exists
       db.prepare(`
         INSERT INTO settings (shop_name, invoice_prefix)
         VALUES ('My Shop', 'INV')
       `).run();
-      
+
       settings = db.prepare('SELECT * FROM settings LIMIT 1').get() as Setting;
     }
 
@@ -21,6 +21,7 @@ export class SettingsModel {
 
   // Create or update settings
   static save(data: {
+    auto_print?: number;
     shop_name: string;
     mobile?: string;
     address?: string;
@@ -55,6 +56,11 @@ export class SettingsModel {
         values.push(data.invoice_prefix);
       }
 
+      if (data.auto_print !== undefined) {
+        updateFields.push('auto_print = ?');
+        values.push(data.auto_print);
+      }
+
       if (updateFields.length > 0) {
         updateFields.push('updated_at = CURRENT_TIMESTAMP');
         db.prepare(`UPDATE settings SET ${updateFields.join(', ')}`).run(...values);
@@ -79,7 +85,7 @@ export class SettingsModel {
   // Update specific fields
   static update(data: Partial<Setting>): Setting | undefined {
     const existing = db.prepare('SELECT * FROM settings LIMIT 1').get() as Setting | undefined;
-    
+
     if (!existing) return undefined;
 
     return this.save({
@@ -88,6 +94,7 @@ export class SettingsModel {
       address: data.address,
       gstin: data.gstin,
       invoice_prefix: data.invoice_prefix,
+      auto_print: undefined
     });
   }
 }

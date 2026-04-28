@@ -25,6 +25,7 @@ function POSpage() {
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState<any>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [autoPrint, setAutoPrint] = useState(false);
 
   // Refs for scrollable containers
   const productGridRef = useRef<HTMLDivElement>(null);
@@ -65,10 +66,18 @@ function POSpage() {
 
   const [shopSettings, setShopSettings] = useState<any>(null);
 
+  // useEffect(() => {
+  //   getSettings().then(res => {
+  //     if (res?.data) setShopSettings(res.data);
+  //     else if (res?.shop_name) setShopSettings(res);
+  //   });
+  // }, []);
+
   useEffect(() => {
     getSettings().then(res => {
-      if (res?.data) setShopSettings(res.data);
-      else if (res?.shop_name) setShopSettings(res);
+      const s = res?.data || res;
+      if (s?.shop_name) setShopSettings(s);
+      if (s?.auto_print) setAutoPrint(!!s.auto_print);
     });
   }, []);
 
@@ -285,26 +294,26 @@ function POSpage() {
           </div>
 
           {/* Store Info - Not scrollable */}
-<div className="m-3 p-3 bg-[#212121] rounded-xl flex-shrink-0">
-  <div className="flex items-center gap-3">
-    <div className="rounded-xl bg-black p-2">
-      <IonIcon icon={storefrontOutline} className="text-2xl text-gray-300" />
-    </div>
-    <div className="flex-1">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="text-base font-bold text-white">
-          {shopSettings?.shop_name || 'My Store'}
-        </div>
-        {shopSettings?.gstin && (
-          <div className="text-xs text-gray-400">GSTIN: {shopSettings.gstin}</div>
-        )}
-      </div>
-      <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-        <span>{shopSettings?.address || 'Set address in Settings'}</span>
-      </div>
-    </div>
-  </div>
-</div>
+          <div className="m-3 p-3 bg-[#212121] rounded-xl flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-black p-2">
+                <IonIcon icon={storefrontOutline} className="text-2xl text-gray-300" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-base font-bold text-white">
+                    {shopSettings?.shop_name || 'My Store'}
+                  </div>
+                  {shopSettings?.gstin && (
+                    <div className="text-xs text-gray-400">GSTIN: {shopSettings.gstin}</div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                  <span>{shopSettings?.address || 'Set address in Settings'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Cart Items List - Scrollable */}
           <div
@@ -431,6 +440,7 @@ function POSpage() {
         <InvoiceReceipt
           invoice={invoiceData}
           onClose={handleCloseInvoice}
+          autoPrint={autoPrint}
         />
       )}
     </div>
