@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Product } from "../../../renderer/types/product";
 
 interface ProductGridProps {
@@ -37,61 +38,116 @@ const getStockColorClass = (product: Product): string | null => {
 };
 
 export default function ProductGrid({ products, loading, onAddItem }: ProductGridProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filter products based on search term
+  const filteredProducts = products.filter((product) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      (product.sku && product.sku.toLowerCase().includes(searchLower)) ||
+      (product.barcode && product.barcode.toLowerCase().includes(searchLower))
+    );
+  });
+
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto p-3 grid grid-cols-4 gap-2">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className=" rounded h-24 animate-pulse bg-gray-100" />
-        ))}
+      <div className="flex flex-col h-full">
+        <div className="p-3">
+          <div className="h-10 rounded-lg bg-gray-100 animate-pulse" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 grid grid-cols-4 gap-2">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="rounded h-24 animate-pulse bg-gray-100" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-y-auto p-3 grid grid-cols-3 gap-2 scrollbar-hide">
-      {(products || []).map((p, index) => {
-        // First check stock-based color
-        const stockColor = getStockColorClass(p);
-
-        // If no stock issue, use consistent color based on product UUID or index
-        let colorIndex: number;
-        if (p.product_uuid) {
-          // Generate a number from UUID string
-          const hash = p.product_uuid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-          colorIndex = Math.abs(hash) % colorClasses.length;
-        } else {
-          colorIndex = index % colorClasses.length;
-        }
-
-        const colorClass = stockColor || colorClasses[colorIndex];
-
-        return (
-          // In ProductGrid.tsx
-<div
-  key={p.product_uuid}
-  className={`border-2 ${colorClass} p-2 rounded-xl cursor-pointer h-40 flex flex-col justify-end items-start transition-all duration-200 font-inter`}
-  onClick={() => {
-    console.log('Product clicked:', p);
-    onAddItem(p);
-  }}
->
-            <div className="font-medium text-sm truncate w-full text-start">
-              {p.name}
-            </div>
-            <div className="text-sm font-semibold">₹{p.price}</div>
-            {p.stock !== undefined && p.stock < 10 && p.stock > 0 && (
-              <div className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full mt-1">
-                Only {p.stock} left
-              </div>
-            )}
-            {p.stock === 0 && (
-              <div className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded-full mt-1">
-                Out of Stock
-              </div>
-            )}
+    <div className="flex flex-col h-full">
+      {/* Search Bar */}
+      <div className="p-3 sticky top-0 z-10">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search products by name, SKU, or barcode..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all font-inter"
+            autoComplete="off"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {/* Search results count */}
+        {searchTerm && (
+          <div className="text-xs text-gray-500 mt-1.5 ml-1">
+            Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
           </div>
-        );
-      })}
+        )}
+      </div>
+
+      {/* Product Grid */}
+      <div className="overflow-y-auto p-3 grid grid-cols-3 gap-2 scrollbar-hide">
+        {filteredProducts.length === 0 ? (
+          <div className="col-span-3 flex flex-col items-center justify-center py-12 text-gray-500">
+            <div className="text-4xl mb-2">🔍</div>
+            <p className="text-sm">No products found</p>
+            <p className="text-xs mt-1">Try a different search term</p>
+          </div>
+        ) : (
+          filteredProducts.map((p, index) => {
+            // First check stock-based color
+            const stockColor = getStockColorClass(p);
+
+            // If no stock issue, use consistent color based on product UUID or index
+            let colorIndex: number;
+            if (p.product_uuid) {
+              // Generate a number from UUID string
+              const hash = p.product_uuid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              colorIndex = Math.abs(hash) % colorClasses.length;
+            } else {
+              colorIndex = index % colorClasses.length;
+            }
+
+            const colorClass = stockColor || colorClasses[colorIndex];
+
+            return (
+              <div
+                key={p.product_uuid}
+                className={`border-2 ${colorClass} p-2 rounded-xl cursor-pointer h-40 flex flex-col justify-end items-start transition-all duration-200 font-inter hover:scale-105 hover:shadow-lg`}
+                onClick={() => {
+                  console.log('Product clicked:', p);
+                  onAddItem(p);
+                }}
+              >
+                <div className="font-medium text-sm truncate w-full text-start">
+                  {p.name}
+                </div>
+                <div className="text-sm font-semibold">₹{p.price}</div>
+                {p.stock !== undefined && p.stock < 10 && p.stock > 0 && (
+                  <div className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full mt-1">
+                    Only {p.stock} left
+                  </div>
+                )}
+                {p.stock === 0 && (
+                  <div className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded-full mt-1">
+                    Out of Stock
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

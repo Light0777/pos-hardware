@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { SettingsModel } from '../models/Settings';
 import type { AuthRequest } from '../middleware/auth';
+import { createBackup, listBackups, restoreBackup } from '../database/backup';
 
 export class SettingsController {
   // GET settings
@@ -82,4 +83,47 @@ export class SettingsController {
       });
     }
   };
+
+
+  // Backup database
+  static backup = (req: AuthRequest, res: Response): void => {
+    try {
+      const backupPath = createBackup('manual');
+      const backups = listBackups();
+      res.json({
+        success: true,
+        message: 'Backup created successfully',
+        data: { backupPath, backups }
+      });
+    } catch (error: any) {
+      console.error('Backup error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  };
+
+  static listBackups = (req: AuthRequest, res: Response): void => {
+    try {
+      const backups = listBackups();
+      res.json({ success: true, data: backups });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  };
+
+  static restore = (req: AuthRequest, res: Response): void => {
+    try {
+      const { backup_name } = req.body;
+      if (!backup_name) {
+        res.status(400).json({ success: false, error: 'backup_name is required' });
+        return;
+      }
+      restoreBackup(backup_name);
+      res.json({ success: true, message: 'Database restored successfully. Please restart the app.' });
+    } catch (error: any) {
+      console.error('Restore error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  };
+
+
 }

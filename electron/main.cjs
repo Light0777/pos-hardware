@@ -3,6 +3,39 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
+process.env.USER_DATA_PATH = app.getPath('userData');
+console.log('USER_DATA_PATH set to:', process.env.USER_DATA_PATH);
+
+const mainWindow = new BrowserWindow({
+  width: 1200,
+  height: 700,
+  webPreferences: {
+    preload: path.join(__dirname, 'preload.js'),
+    nodeIntegration: false,
+    contextIsolation: true,
+    devTools: !app.isPackaged,  // ✅ Only enable devTools in development
+  }
+});
+
+// After creating the window, block dev tools shortcuts
+mainWindow.webContents.on('before-input-event', (event, input) => {
+  // Block F12
+  if (input.key === 'F12') {
+    event.preventDefault();
+  }
+  // Block Ctrl+Shift+I
+  if (input.control && input.shift && input.key === 'I') {
+    event.preventDefault();
+  }
+});
+
+// In production, automatically close dev tools if they open
+if (app.isPackaged) {
+  mainWindow.webContents.on('devtools-opened', () => {
+    mainWindow.webContents.closeDevTools();
+  });
+}
+
 let mainWindow = null;
 let serverProcess = null;
 

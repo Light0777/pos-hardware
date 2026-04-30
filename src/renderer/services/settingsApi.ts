@@ -12,3 +12,16 @@ export async function saveSettings(data: any) {
 export async function updateSettings(data: any) {
   return await apiPut("/settings", data);
 }
+
+// Backup management
+export async function createBackup() {
+  return await apiPost('/settings/backup', {});
+}
+
+export async function listBackups() {
+  return await apiGet('/settings/backups');
+}
+
+export async function restoreBackup(backup_name: string) {
+  return await apiPost('/settings/restore', { backup_name });
+}

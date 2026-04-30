@@ -19,6 +19,8 @@ import supplierRoutes from './routes/suppliers';
 import reportRoutes from './routes/reports';
 import staffRoutes from './routes/staff';
 
+import { scheduleAutoBackup, checkDbIntegrity } from './database/backup';
+
 // Load environment variables - simplified for CommonJS
 dotenv.config();
 
@@ -36,6 +38,17 @@ app.use(express.urlencoded({ extended: true }));
 runMigrations();
 addHsnCode();
 addAutoPrint();
+
+// After startServer():
+startServer().then(() => {
+  // Check DB integrity on startup
+  const isHealthy = checkDbIntegrity();
+  if (!isHealthy) {
+    console.error('⚠️ DB integrity check failed on startup!');
+  }
+  // Start auto backup schedule
+  scheduleAutoBackup();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -98,7 +111,7 @@ const isElectron = process.env.ELECTRON_RUNNING === 'true';
 // 1. Not in Electron (Electron will call startServer manually)
 // 2. It's the main module
 // if (isMainModule) {
-  startServer().catch((error) => {
+startServer().catch((error) => {
   console.error('Failed to start server:', error);
   process.exit(1);
 });

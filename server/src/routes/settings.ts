@@ -16,4 +16,9 @@ router.post('/', authorize('owner'), SettingsController.save);
 // PUT update settings (owner only)
 router.put('/', authorize('owner'), SettingsController.update);
 
+// Additional routes for backup management (owner only)
+router.post('/backup', authorize('owner'), SettingsController.backup);
+router.get('/backups', authorize('owner'), SettingsController.listBackups);
+router.post('/restore', authorize('owner'), SettingsController.restore);
+
 export default router;

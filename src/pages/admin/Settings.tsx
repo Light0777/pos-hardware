@@ -13,6 +13,9 @@ import {
   pricetagOutline,
   refreshOutline,
 } from "ionicons/icons";
+import { createBackup, listBackups, restoreBackup } from "../../renderer/services/settingsApi";
+import { cloudUploadOutline, cloudDownloadOutline, trashOutline } from "ionicons/icons";
+
 
 export default function Settings() {
   const [data, setData] = useState<any>(null);
@@ -20,6 +23,9 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [backups, setBackups] = useState<any[]>([]);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -60,6 +66,49 @@ export default function Settings() {
       setLoading(false);
     }
   };
+
+  const loadBackups = async () => {
+    try {
+      const res = await listBackups();
+      if (res?.data) setBackups(res.data);
+    } catch (err) {
+      console.error('Failed to load backups:', err);
+    }
+  };
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      await createBackup();
+      setSuccess('Backup created successfully!');
+      await loadBackups();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Backup failed');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleRestore = async (backupName: string) => {
+    if (!confirm(`Restore from ${backupName}? This will overwrite all current data!`)) return;
+    setBackupLoading(true);
+    try {
+      await restoreBackup(backupName);
+      setSuccess('Restored! Please restart the app.');
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      setError('Restore failed');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
+    loadBackups();
+  }, []);
+
 
   const handleSave = async () => {
     if (!data?.shop_name) {
@@ -381,6 +430,58 @@ export default function Settings() {
             </span>
           )}
         </button>
+      </div>
+
+      {/* Backup & Restore Card */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IonIcon icon={cloudUploadOutline} className="text-white text-xl" />
+              <h2 className="text-white font-semibold text-lg">Backup & Restore</h2>
+            </div>
+            <button
+              onClick={handleBackup}
+              disabled={backupLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <IonIcon icon={cloudUploadOutline} />
+              {backupLoading ? 'Creating...' : 'Backup Now'}
+            </button>
+          </div>
+        </div>
+        <div className="p-6">
+          {backups.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">No backups yet. Click "Backup Now" to create one.</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700 mb-3">Available Backups (last 7):</p>
+              {backups.map((backup, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-mono text-gray-700">{backup.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(backup.date).toLocaleString('en-IN')} · {(backup.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRestore(backup.name)}
+                    disabled={backupLoading}
+                    className="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <IonIcon icon={cloudDownloadOutline} />
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+            <p className="text-xs text-yellow-800">
+              ⚡ Auto-backup runs daily. Backups are stored at: <span className="font-mono">~/.config/pos-app/backups/</span> on Linux, <span className="font-mono">%APPDATA%\pos-app\backups\</span> on Windows.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
