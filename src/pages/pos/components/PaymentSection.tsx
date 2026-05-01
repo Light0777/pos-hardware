@@ -1,6 +1,4 @@
-import { IonIcon } from '@ionic/react';
-import { trashBin, checkmarkCircle, cardOutline, qrCodeOutline, cashOutline } from 'ionicons/icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface PaymentSectionProps {
   payments: Array<{ method: string; amount: number }>;
@@ -9,6 +7,7 @@ interface PaymentSectionProps {
   onRemoveRow: (index: number) => void;
   totalPaid: number;
   balance: number;
+  grandTotal?: number;
 }
 
 export default function PaymentSection({
@@ -18,88 +17,108 @@ export default function PaymentSection({
   onRemoveRow,
   totalPaid,
   balance,
+  grandTotal = 0,
 }: PaymentSectionProps) {
-  const [selectedMethod, setSelectedMethod] = useState<string>(payments[0]?.method || "cash");
-  const [upiId, setUpiId] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<string>("cash");
+  const [amountGiven, setAmountGiven] = useState<number>(0);
+
+  // Sync amount when grandTotal changes (auto-fill)
+  useEffect(() => {
+    if (grandTotal > 0) {
+      setAmountGiven(grandTotal);
+      onPaymentChange(0, "amount", grandTotal);
+    }
+  }, [grandTotal]);
+
+  const change = amountGiven - grandTotal;
 
   const handleMethodSelect = (method: string) => {
     setSelectedMethod(method);
     onPaymentChange(0, "method", method);
   };
 
-  const handleAmountChange = (amount: number) => {
-    onPaymentChange(0, "amount", amount);
+  const handleAmountChange = (value: number) => {
+    setAmountGiven(value);
+    onPaymentChange(0, "amount", value);
   };
 
+  const methods = [
+    { id: "cash", label: "Cash", activeBorder: "border-green-500", activeBg: "bg-green-500/10", activeText: "text-green-500" },
+    { id: "upi", label: "UPI", activeBorder: "border-purple-500", activeBg: "bg-purple-500/10", activeText: "text-purple-500" },
+    { id: "card", label: "Card", activeBorder: "border-blue-500", activeBg: "bg-blue-500/10", activeText: "text-blue-500" },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="font-medium text-sm text-gray-300">Payment Methods</div>
-      
-      {/* Payment Method Selector as Cards */}
+    <div className="space-y-3">
+      <div className="font-medium text-sm text-gray-300">Payment Method</div>
+
+      {/* Method Selector */}
       <div className="grid grid-cols-3 gap-2">
-        {/* Cash Option */}
-        <div
-          className={`border-2 rounded-xl p-3 cursor-pointer transition-all ${
-            selectedMethod === "cash"
-              ? "border-green-500 bg-green-500/10"
-              : "border-gray-700 bg-[#212121] hover:border-gray-600"
-          }`}
-          onClick={() => handleMethodSelect("cash")}
-        >
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-sm font-medium ${selectedMethod === "cash" ? "text-green-500" : "text-white"}`}>Cash</span>
-          </div>
-        </div>
+        {methods.map(({ id, label, activeBorder, activeBg, activeText }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => handleMethodSelect(id)}
+            className={`border-2 rounded-xl p-3 transition-all text-center ${
+              selectedMethod === id
+                ? `${activeBorder} ${activeBg}`
+                : "border-gray-700 bg-[#212121] hover:border-gray-600"
+            }`}
+          >
+            <span className={`text-sm font-medium ${
+              selectedMethod === id ? activeText : "text-white"
+            }`}>
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
 
-        {/* UPI Option */}
-        <div
-          className={`border-2 rounded-xl p-3 cursor-pointer transition-all ${
-            selectedMethod === "upi"
-              ? "border-purple-500 bg-purple-500/10"
-              : "border-gray-700 bg-[#212121] hover:border-gray-600"
-          }`}
-          onClick={() => handleMethodSelect("upi")}
-        >
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-sm font-medium ${selectedMethod === "upi" ? "text-purple-500" : "text-white"}`}>UPI</span>
-            {selectedMethod === "upi" && (
-              <IonIcon icon={checkmarkCircle} className="text-purple-500 text-xs absolute top-2 right-2" />
-            )}
-          </div>
-        </div>
+      {/* Bill Amount */}
+      <div className="flex justify-between items-center bg-[#212121] rounded-xl px-3 py-2">
+        <span className="text-gray-400 text-sm">Bill Amount</span>
+        <span className="text-white font-bold text-lg">₹{grandTotal.toLocaleString()}</span>
+      </div>
 
-        {/* Card Option */}
-        <div
-          className={`border-2 rounded-xl p-3 cursor-pointer transition-all ${
-            selectedMethod === "card"
-              ? "border-blue-500 bg-blue-500/10"
-              : "border-gray-700 bg-[#212121] hover:border-gray-600"
-          }`}
-          onClick={() => handleMethodSelect("card")}
-        >
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-sm font-medium ${selectedMethod === "card" ? "text-blue-500" : "text-white"}`}>Card</span>
-            {selectedMethod === "card" && (
-              <IonIcon icon={checkmarkCircle} className="text-blue-500 text-xs absolute top-2 right-2" />
-            )}
-          </div>
+      {/* Amount Input */}
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">
+          {selectedMethod === "cash" ? "Cash Given by Customer" : "Amount Paid"}
+        </label>
+        <div className="flex items-center gap-2 bg-[#212121] border border-gray-600 rounded-xl px-3 py-2 focus-within:border-green-500 transition-colors">
+          <span className="text-gray-400 font-bold text-lg">₹</span>
+          <input
+            type="number"
+            className="flex-1 bg-transparent text-white text-xl font-bold outline-none"
+            value={amountGiven || ""}
+            placeholder={grandTotal.toString()}
+            onChange={(e) => handleAmountChange(Number(e.target.value))}
+          />
+          <button
+            type="button"
+            className="text-xs text-green-500 border border-green-500/50 px-2 py-1 rounded-lg hover:bg-green-500/10 transition-colors whitespace-nowrap"
+            onClick={() => handleAmountChange(grandTotal)}
+          >
+            Exact
+          </button>
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="text-sm border-t border-gray-700 pt-3 mt-2">
-        <div className="flex justify-between items-center py-1">
-          <span className="text-gray-400">Total Paid</span>
-          <span className="font-bold text-white text-lg">₹{totalPaid.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center py-1">
-          <span className="text-gray-400">Balance</span>
-          <span className={balance < 0 ? "text-red-500 font-bold text-lg" : "text-green-500 font-bold text-lg"}>
-            {balance < 0 ? `Due: ₹${Math.abs(balance)}` : `Change: ₹${balance}`}
+      {/* Change / Due */}
+      {amountGiven > 0 && (
+        <div className={`rounded-xl px-3 py-2 flex justify-between items-center ${
+          change >= 0
+            ? "bg-green-500/10 border border-green-500/30"
+            : "bg-red-500/10 border border-red-500/30"
+        }`}>
+          <span className={`text-sm font-medium ${change >= 0 ? "text-green-400" : "text-red-400"}`}>
+            {change >= 0 ? "Change to Return" : "⚠️ Amount Due"}
+          </span>
+          <span className={`text-xl font-bold ${change >= 0 ? "text-green-400" : "text-red-400"}`}>
+            ₹{Math.abs(change).toLocaleString()}
           </span>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -51,6 +51,7 @@ function POSpage() {
     balance,
     loading: cartLoading,
     isCartInitializing,
+    currentMethodRef,
   } = useCart();
 
   const {
@@ -423,6 +424,10 @@ function POSpage() {
                 const updated = [...payments];
                 updated[index] = { ...updated[index], [field]: value };
                 setPayments(updated);
+                // Keep method ref in sync
+                if (field === "method") {
+                  currentMethodRef.current = value;
+                }
               }}
               onAddRow={() =>
                 setPayments([...payments, { method: "upi", amount: 0 }])
@@ -433,6 +438,7 @@ function POSpage() {
               }}
               totalPaid={totalPaid}
               balance={balance}
+              grandTotal={grandTotal}
             />
 
             {/* Checkout Button */}

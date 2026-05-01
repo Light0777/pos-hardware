@@ -84,11 +84,10 @@ export class SettingsController {
     }
   };
 
-
-  // Backup database
-  static backup = (req: AuthRequest, res: Response): void => {
+  // In backup method, remove the parameter since your createBackup has a default parameter
+  static backup = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const backupPath = createBackup('manual');
+      const backupPath = createBackup('manual'); // This is fine - 'manual' is a valid label
       const backups = listBackups();
       res.json({
         success: true,
@@ -101,29 +100,28 @@ export class SettingsController {
     }
   };
 
-  static listBackups = (req: AuthRequest, res: Response): void => {
+  static listBackups = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const backups = listBackups();
+      const backups = await listBackups();
       res.json({ success: true, data: backups });
     } catch (error: any) {
+      console.error('List backups error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   };
 
-  static restore = (req: AuthRequest, res: Response): void => {
+  static restore = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { backup_name } = req.body;
       if (!backup_name) {
         res.status(400).json({ success: false, error: 'backup_name is required' });
         return;
       }
-      restoreBackup(backup_name);
+      await restoreBackup(backup_name);
       res.json({ success: true, message: 'Database restored successfully. Please restart the app.' });
     } catch (error: any) {
       console.error('Restore error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   };
-
-
 }

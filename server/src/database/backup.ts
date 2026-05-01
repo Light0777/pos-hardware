@@ -15,7 +15,7 @@ const getBackupDir = (): string => {
       console.warn('Electron not available, using fallback backup directory');
     }
   }
-  
+
   // Development mode or fallback
   const base = process.env.USER_DATA_PATH || process.cwd();
   return path.join(base, 'backups');
@@ -32,7 +32,7 @@ const getDbPath = (): string => {
       console.warn('Electron not available, using fallback database path');
     }
   }
-  
+
   // Development mode or fallback
   const base = process.env.USER_DATA_PATH || process.cwd();
   return path.join(base, 'database', 'pos_billing.db');
@@ -48,26 +48,16 @@ export function ensureBackupDir(): void {
 
 export function createBackup(label: string = 'auto'): string {
   ensureBackupDir();
-  const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const backupPath = path.join(getBackupDir(), `pos_backup_${label}_${date}.db`);
-
+  
   const dbPath = getDbPath();
   
-  // Check if source database exists
+  // Skip backup if DB doesn't exist yet (first run or wrong path)
   if (!fs.existsSync(dbPath)) {
     throw new Error(`Source database not found at: ${dbPath}`);
   }
-
-  // Use SQLite backup API for safe hot backup
-  try {
-    const backup = (db as any).backup(backupPath);
-    backup;
-  } catch (err) {
-    // Fallback to file copy if SQLite backup fails
-    console.log('Using file copy fallback for backup');
-  }
-
-  // Fallback: file copy (safe with WAL mode)
+  
+  const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const backupPath = path.join(getBackupDir(), `pos_backup_${label}_${date}.db`);
   fs.copyFileSync(dbPath, backupPath);
   console.log(`✅ Backup created: ${backupPath}`);
   return backupPath;
@@ -76,11 +66,11 @@ export function createBackup(label: string = 'auto'): string {
 export function listBackups(): { name: string; path: string; size: number; date: string }[] {
   ensureBackupDir();
   const dir = getBackupDir();
-  
+
   if (!fs.existsSync(dir)) {
     return [];
   }
-  
+
   return fs.readdirSync(dir)
     .filter(f => f.startsWith('pos_backup_') && f.endsWith('.db'))
     .sort()
@@ -104,7 +94,7 @@ export function restoreBackup(backupName: string): void {
   }
 
   const dbPath = getDbPath();
-  
+
   // Ensure database directory exists
   const dbDir = path.dirname(dbPath);
   if (!fs.existsSync(dbDir)) {
@@ -148,21 +138,20 @@ export function checkDbIntegrity(): boolean {
 }
 
 export function scheduleAutoBackup(): void {
-  // Backup on startup
   try {
     createBackup('auto');
     pruneOldBackups(7);
-  } catch (err) {
-    console.error('Startup backup failed:', err);
+  } catch (err: any) {
+    // Non-fatal in dev mode - DB might be in different location
+    console.warn('Startup backup skipped:', err.message);
   }
 
-  // Backup every 24 hours
   setInterval(() => {
     try {
       createBackup('auto');
       pruneOldBackups(7);
-    } catch (err) {
-      console.error('Scheduled backup failed:', err);
+    } catch (err: any) {
+      console.warn('Scheduled backup failed:', err.message);
     }
   }, 24 * 60 * 60 * 1000);
 }

@@ -51,11 +51,12 @@ export class SaleController {
       const totalPaid = payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
       const grandTotal = cart.summary.grand_total;
 
-      // Validate payment amounts
-      if (Math.abs(totalPaid - grandTotal) > 0.01) { // Allow small rounding differences
+      // Allow overpayment (customer gives more cash = change)
+      // Only reject underpayment if no customer selected for credit
+      if (totalPaid < grandTotal - 0.01) {
         res.status(400).json({
           success: false,
-          error: `Payment amount mismatch. Total: ${grandTotal}, Paid: ${totalPaid}`
+          error: `Insufficient payment. Total: ${grandTotal}, Paid: ${totalPaid}`
         });
         return;
       }

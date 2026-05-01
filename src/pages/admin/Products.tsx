@@ -318,11 +318,11 @@ export default function Products() {
                     value={form.gst_percent}
                     onChange={(e) => setForm({ ...form, gst_percent: e.target.value })}
                   >
-                    <option value="0">0% (Exempt)</option>
-                    <option value="5">5%</option>
-                    <option value="12">12%</option>
-                    <option value="18">18%</option>
-                    <option value="28">28%</option>
+                    <option value="0">0% — Exempt (vegetables, milk)</option>
+                    <option value="5">5% — Basic goods (tea, medicines)</option>
+                    <option value="12">12% — Processed goods</option>
+                    <option value="18">18% — Standard rate</option>
+                    <option value="28">28% — Luxury goods</option>
                   </select>
                 </div>
                 <div>
