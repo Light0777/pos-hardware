@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { checkmarkCircle, exit, barbellOutline, personCircleOutline, settingsOutline, logOutOutline, notifications, notificationsOutline, menuOutline } from "ionicons/icons";
 import { IonIcon } from "@ionic/react";
 import { useState, useRef, useEffect } from "react";
+import { getSettings } from "../renderer/services/settingsApi";
 
 interface TopbarProps {
     onMenuClick?: () => void;
@@ -34,6 +35,15 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
     const title = getPageTitle(location.pathname);
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const currentDate = new Date().toLocaleDateString([], { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+
+    const [shopName, setShopName] = useState<string>("My Shop");
+
+    useEffect(() => {
+        getSettings().then(res => {
+            const name = res?.data?.shop_name || res?.shop_name;
+            if (name) setShopName(name);
+        });
+    }, []);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -83,10 +93,10 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
                 >
                     <IonIcon icon={menuOutline} className="text-xl" />
                 </button>
-                
+
                 <div className="grid">
                     <h1 className="text-2xl font-bold text-white">
-                        Company Name
+                        {shopName}
                     </h1>
                 </div>
             </div>
@@ -101,7 +111,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
                 </div>
 
                 {/* Notification Bell */}
-                <button 
+                <button
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -152,7 +162,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
                     {/* Dropdown Menu */}
                     {showUserMenu && (
-                        <div 
+                        <div
                             ref={menuRef}
                             className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
                             style={{ position: 'absolute', top: '100%', right: 0 }}
