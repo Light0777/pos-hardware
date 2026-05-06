@@ -7,4 +7,5 @@ export type Product = {
   stock?: number;
   barcode?: string;
   sku?: string;
+  image?: string;
 };

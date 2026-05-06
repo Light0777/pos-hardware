@@ -29,6 +29,7 @@ export default function Products() {
     gst_percent: "0",
     hsn_code: "",
     description: "",
+    image: "",
   });
 
   const loadProducts = async () => {
@@ -71,6 +72,7 @@ export default function Products() {
           gst_percent: Number(form.gst_percent),  // ← add this
           hsn_code: form.hsn_code,                // ← add this
           description: form.description,
+          image: form.image || undefined,
         });
       } else {
         await createProduct({
@@ -81,10 +83,11 @@ export default function Products() {
           gst_percent: Number(form.gst_percent),
           hsn_code: form.hsn_code,
           description: form.description,
+          image: form.image || undefined,
         });
       }
 
-      setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "" });
+      setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "", image: "" });
       setEditing(null);
       setShowForm(false);
       await loadProducts();
@@ -108,6 +111,7 @@ export default function Products() {
       gst_percent: p.gst_percent || "0",
       hsn_code: p.hsn_code || "",
       description: p.description || "",
+      image: p.image || "",
     });
     setShowForm(true);
   };
@@ -148,7 +152,7 @@ export default function Products() {
         <button
           onClick={() => {
             setEditing(null);
-            setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "" });
+            setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "", image: "" });
             setError(null);
             setShowForm(!showForm);
           }}
@@ -347,6 +351,62 @@ export default function Products() {
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Image (Optional)
+                </label>
+                <div className="flex items-center gap-3">
+                  {form.image && (
+                    <img
+                      src={form.image}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+                    />
+                  )}
+                  <label className="flex-1 cursor-pointer border-2 border-dashed border-gray-300 rounded-xl p-3 text-center hover:border-blue-400 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        // Resize and convert to base64
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX = 200;
+                            let w = img.width, h = img.height;
+                            if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+                            else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+                            canvas.width = w;
+                            canvas.height = h;
+                            canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+                            setForm({ ...form, image: canvas.toDataURL('image/jpeg', 0.7) });
+                          };
+                          img.src = ev.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <p className="text-xs text-gray-400">
+                      {form.image ? 'Click to change image' : 'Click to upload image'}
+                    </p>
+                  </label>
+                  {form.image && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, image: '' })}
+                      className="text-red-500 hover:text-red-700 text-xs"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
 
               <button

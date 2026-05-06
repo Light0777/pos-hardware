@@ -2,7 +2,7 @@ import db from '../connection';
 
 export function addAutoPrint(): void {
   const cols = db.prepare("PRAGMA table_info(settings)").all() as any[];
-  
+
   const hasAutoPrint = cols.some(c => c.name === 'auto_print');
   if (!hasAutoPrint) {
     db.exec(`ALTER TABLE settings ADD COLUMN auto_print INTEGER DEFAULT 0`);
@@ -31,6 +31,13 @@ export function addAutoPrint(): void {
   if (!hasPrinterName) {
     db.exec(`ALTER TABLE settings ADD COLUMN printer_name TEXT`);
     console.log('Added printer_name column to settings');
+  }
+
+  const productCols = db.prepare("PRAGMA table_info(products)").all() as any[];
+  const hasImage = productCols.some(c => c.name === 'image');
+  if (!hasImage) {
+    db.exec(`ALTER TABLE products ADD COLUMN image TEXT`);
+    console.log('Added image column to products');
   }
 }
 

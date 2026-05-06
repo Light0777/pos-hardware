@@ -8,20 +8,15 @@ export class ProductModel {
     const uuid = uuidv4();
 
     const stmt = db.prepare(`
-    INSERT INTO products (
-      product_uuid, name, barcode, sku, price, gst_percent, stock, hsn_code
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  INSERT INTO products (
+    product_uuid, name, barcode, sku, price, gst_percent, stock, hsn_code, image
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
 
     stmt.run(
-      uuid,
-      input.name,
-      input.barcode || null,
-      input.sku || null,
-      input.price,
-      input.gst_percent || 0,
-      input.stock || 0,
-      input.hsn_code || null
+      uuid, input.name, input.barcode || null, input.sku || null,
+      input.price, input.gst_percent || 0, input.stock || 0,
+      input.hsn_code || null, input.image || null
     );
 
     return this.findById(uuid)!;
@@ -122,7 +117,7 @@ export class ProductModel {
     const product = this.findById(uuid);
     if (!product) return undefined;
 
-    const allowedFields = ['name', 'barcode', 'sku', 'price', 'gst_percent', 'stock', 'hsn_code'];
+    const allowedFields = ['name', 'barcode', 'sku', 'price', 'gst_percent', 'stock', 'hsn_code', 'image'];
     const updateFields: string[] = [];
     const values: any[] = [];
 

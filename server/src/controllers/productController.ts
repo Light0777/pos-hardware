@@ -22,7 +22,7 @@ export class ProductController {
   // Create new product
   static create = (req: AuthRequest, res: Response): void => {
     try {
-      const { name, price, barcode, sku, gst_percent, stock, hsn_code } = req.body;
+      const { name, price, barcode, sku, gst_percent, stock, hsn_code, image } = req.body;
 
       // Validation
       if (!name || price === undefined) {
@@ -64,7 +64,8 @@ export class ProductController {
         sku: sku ? String(sku) : undefined,
         gst_percent: gst_percent !== undefined ? Number(gst_percent) : undefined,
         stock: stock !== undefined ? Number(stock) : undefined,
-        hsn_code: hsn_code ? String(hsn_code) : undefined  // ← add this
+        hsn_code: hsn_code ? String(hsn_code) : undefined,
+        image: image ? String(image) : undefined,
       });
 
       res.status(201).json({
@@ -222,7 +223,7 @@ export class ProductController {
   static update = (req: AuthRequest, res: Response): void => {
     try {
       const uuid = String(req.params.uuid);
-      const { name, price, barcode, sku, gst_percent, stock, hsn_code } = req.body;
+      const { name, price, barcode, sku, gst_percent, stock, hsn_code, image } = req.body;
 
       const updates: any = {};
       if (name !== undefined) updates.name = String(name);
@@ -232,6 +233,7 @@ export class ProductController {
       if (gst_percent !== undefined) updates.gst_percent = Number(gst_percent);
       if (stock !== undefined) updates.stock = Number(stock);
       if (hsn_code !== undefined) updates.hsn_code = String(hsn_code);
+      if (image !== undefined) updates.image = String(image);
 
       const product = ProductModel.update(uuid, updates);
 

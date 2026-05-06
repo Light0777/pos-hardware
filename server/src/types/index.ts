@@ -28,6 +28,7 @@ export interface ProductCreateInput {
   sku?: string;
   gst_percent?: number;
   stock?: number;
+  image?: string;
 }
 
 export interface ProductUpdateInput {
@@ -37,7 +38,8 @@ export interface ProductUpdateInput {
   sku?: string;
   gst_percent?: number;
   stock?: number;
-  hsn_code?: string; 
+  hsn_code?: string;
+  image?: string;
 }
 
 export interface ProductSearchParams {
@@ -198,7 +200,7 @@ export interface Setting {
   invoice_prefix: string;
   created_at: string;
   updated_at: string;
-  auto_print?: number; 
+  auto_print?: number;
 }
 
 export interface Cart {
