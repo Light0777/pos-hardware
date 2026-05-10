@@ -87,7 +87,7 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
   const doubleDashes = '================================';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 print:static print:bg-white print:p-0 print:block">
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 print:static print:bg-white print:p-0 print:block font-bold">
 
       {/* Action Buttons - Hidden when printing */}
       <div className="print:hidden fixed top-4 right-4 flex gap-2 z-50">

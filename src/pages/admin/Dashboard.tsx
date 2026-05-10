@@ -229,15 +229,6 @@ export default function Dashboard() {
           <div className="text-right">
             <p className="text-xs text-gray-400">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
-          <button
-            onClick={() => {
-              console.log("🔘 Manual refresh clicked");
-              setRefreshTrigger(prev => prev + 1);
-            }}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs transition-colors"
-          >
-            🔄 Refresh
-          </button>
         </div>
       </div>
 
