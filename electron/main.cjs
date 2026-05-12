@@ -2,6 +2,24 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const http = require('http');
+
+function waitForBackend(url, retries = 20, delay = 500) {
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      http.get(url, (res) => {
+        resolve(); // backend is up
+      }).on('error', () => {
+        if (retries-- > 0) {
+          setTimeout(attempt, delay);
+        } else {
+          reject(new Error('Backend did not start in time'));
+        }
+      });
+    };
+    attempt();
+  });
+}
 
 process.env.USER_DATA_PATH = app.getPath('userData');
 console.log('USER_DATA_PATH set to:', process.env.USER_DATA_PATH);
@@ -32,7 +50,7 @@ function startBackend() {
   } else {
     const possiblePaths = [
       path.join(process.resourcesPath, 'server/index.cjs'),
-      path.join(__dirname, '../server/dist/index.cjs'),
+      path.join(__dirname, './server/dist/index.cjs'),
       path.join(process.resourcesPath, 'app.asar/server/index.cjs')
     ];
 
@@ -88,33 +106,31 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    show: false,
     minWidth: 1200,
     minHeight: 700,
+    icon: path.join(__dirname, './assets/icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
     },
-    title: 'POS Billing System',
-    show: false
+    title: 'Instant Bill',
   });
-
-  const isDev = !app.isPackaged;
 
   mainWindow.once('ready-to-show', () => {
     if (mainWindow) mainWindow.show();
   });
+
+  const isDev = !app.isPackaged;
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(__dirname, '../dist/index.html');
-    console.log(`Looking for frontend at: ${indexPath}`);
     if (fs.existsSync(indexPath)) {
-      mainWindow.loadFile(indexPath);
-      mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.executeJavaScript(`window.location.hash = '#/'`);
-      });
+      // ✅ Load with hash in the URL directly — no post-load redirect
+      mainWindow.loadFile(indexPath, { hash: '/' });
     } else {
       console.error(`Frontend not found at: ${indexPath}`);
       app.quit();
@@ -126,9 +142,18 @@ function createWindow() {
   });
 }
 
+// ✅ Wait for backend to actually be ready instead of hardcoded 3s
 app.whenReady().then(() => {
   startBackend();
-  setTimeout(createWindow, 3000);
+  waitForBackend('http://127.0.0.1:3000/api/health')
+    .then(() => {
+      console.log('Backend ready, creating window');
+      createWindow();
+    })
+    .catch((err) => {
+      console.error(err.message);
+      createWindow(); // create anyway as fallback
+    });
 });
 
 app.on('window-all-closed', () => {

@@ -372,9 +372,9 @@ export default function Dashboard() {
                       fontSize: '12px',
                       textAlign: 'start'
                     }}
-                    formatter={(value: any, name: string) => [
+                    formatter={(value: any, name: any) => [
                       `₹${Number(value).toLocaleString()}`,
-                      name.charAt(0).toUpperCase() + name.slice(1)
+                      String(name).charAt(0).toUpperCase() + String(name).slice(1)
                     ]}
                     labelFormatter={(label) => ` ${label}`}
                   />
