@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getStock, updateStock } from "../../renderer/services/stockApi";
 import { IonIcon } from "@ionic/react";
 import {
@@ -16,6 +17,7 @@ import {
 } from "ionicons/icons";
 
 export default function Stock() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<any[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [newStock, setNewStock] = useState<number>(0);
@@ -29,13 +31,11 @@ export default function Stock() {
       setLoading(true);
       setError(null);
       const data = await getStock();
-
-      // Ensure data is an array
       const stockData = Array.isArray(data) ? data : [];
       setItems(stockData);
     } catch (err: any) {
       console.error("Stock load error:", err);
-      setError(err.message || "Failed to load stock data");
+      setError(err.message || t('stock.loadError'));
       setItems([]);
     } finally {
       setLoading(false);
@@ -56,19 +56,17 @@ export default function Stock() {
       await loadStock();
     } catch (err: any) {
       console.error("Stock update error:", err);
-      setError(err.message || "Failed to update stock");
+      setError(err.message || t('stock.updateError'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate stats safely
   const totalProducts = items.length;
   const lowStockCount = items.filter((item) => item && item.stock < 10 && item.stock > 0).length;
   const outOfStockCount = items.filter((item) => item && item.stock === 0).length;
   const totalStock = items.reduce((sum, item) => sum + (item?.stock || 0), 0);
 
-  // Filter items safely
   const filteredItems = items.filter((item) => {
     if (!item) return false;
     const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
@@ -83,19 +81,19 @@ export default function Stock() {
     return (
       <div className="space-y-6 font-inter">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">Stock Management</h1>
+          <h1 className="text-3xl font-bold text-white">{t('stock.title')}</h1>
           <button
             onClick={loadStock}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2"
           >
             <IonIcon icon={refreshOutline} className="text-xl" />
-            <span>Retry</span>
+            <span>{t('stock.retry')}</span>
           </button>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
           <IonIcon icon={warningOutline} className="text-5xl text-red-500 mx-auto mb-4" />
           <p className="text-red-700 font-medium">{error}</p>
-          <p className="text-red-600 text-sm mt-2">Please check your connection and try again.</p>
+          <p className="text-red-600 text-sm mt-2">{t('stock.checkConnection')}</p>
         </div>
       </div>
     );
@@ -106,8 +104,8 @@ export default function Stock() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white font-inter">Stock Management</h1>
-          <p className="text-gray-500 text-sm mt-1">Track and manage your inventory levels</p>
+          <h1 className="text-3xl font-bold text-white font-inter">{t('stock.title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('stock.subtitle')}</p>
         </div>
         <button
           onClick={loadStock}
@@ -115,7 +113,7 @@ export default function Stock() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
         >
           <IonIcon icon={refreshOutline} className="text-xl" />
-          <span>Refresh</span>
+          <span>{t('stock.refresh')}</span>
         </button>
       </div>
 
@@ -124,7 +122,7 @@ export default function Stock() {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Total Products</p>
+              <p className="text-blue-100 text-sm">{t('stock.totalProducts')}</p>
               <p className="text-3xl font-bold mt-1">{totalProducts}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -136,7 +134,7 @@ export default function Stock() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-green-100 text-sm">Total Stock Units</p>
+              <p className="text-green-100 text-sm">{t('stock.totalStockUnits')}</p>
               <p className="text-3xl font-bold mt-1">{totalStock.toLocaleString()}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -147,7 +145,7 @@ export default function Stock() {
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-orange-100 text-sm">Low Stock</p>
+              <p className="text-orange-100 text-sm">{t('stock.lowStock')}</p>
               <p className="text-3xl font-bold mt-1">{lowStockCount}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -159,7 +157,7 @@ export default function Stock() {
         <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-red-100 text-sm">Out of Stock</p>
+              <p className="text-red-100 text-sm">{t('stock.outOfStock')}</p>
               <p className="text-3xl font-bold mt-1">{outOfStockCount}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -174,7 +172,7 @@ export default function Stock() {
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder={t('stock.searchPlaceholder')}
             className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -187,30 +185,33 @@ export default function Stock() {
         <div className="flex gap-2">
           <button
             onClick={() => setFilterStatus("all")}
-            className={`px-4 py-2 rounded-xl font-medium transition-all ${filterStatus === "all"
+            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+              filterStatus === "all"
                 ? "bg-blue-600 text-white shadow-md"
                 : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-              }`}
+            }`}
           >
-            All
+            {t('stock.filterAll')}
           </button>
           <button
             onClick={() => setFilterStatus("low")}
-            className={`px-4 py-2 rounded-xl font-medium transition-all ${filterStatus === "low"
+            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+              filterStatus === "low"
                 ? "bg-orange-600 text-white shadow-md"
                 : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-              }`}
+            }`}
           >
-            Low Stock
+            {t('stock.filterLow')}
           </button>
           <button
             onClick={() => setFilterStatus("ok")}
-            className={`px-4 py-2 rounded-xl font-medium transition-all ${filterStatus === "ok"
+            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+              filterStatus === "ok"
                 ? "bg-green-600 text-white shadow-md"
                 : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-              }`}
+            }`}
           >
-            In Stock
+            {t('stock.filterInStock')}
           </button>
         </div>
       </div>
@@ -221,10 +222,10 @@ export default function Stock() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left p-4 text-sm font-semibold text-gray-600">Product</th>
-                <th className="text-right p-4 text-sm font-semibold text-gray-600">Current Stock</th>
-                <th className="text-center p-4 text-sm font-semibold text-gray-600">Status</th>
-                <th className="text-center p-4 text-sm font-semibold text-gray-600">Actions</th>
+                <th className="text-left p-4 text-sm font-semibold text-gray-600">{t('stock.tableProduct')}</th>
+                <th className="text-right p-4 text-sm font-semibold text-gray-600">{t('stock.tableCurrentStock')}</th>
+                <th className="text-center p-4 text-sm font-semibold text-gray-600">{t('stock.tableStatus')}</th>
+                <th className="text-center p-4 text-sm font-semibold text-gray-600">{t('stock.tableActions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -232,13 +233,13 @@ export default function Stock() {
                 <tr>
                   <td colSpan={4} className="text-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="text-gray-500 mt-2">Loading stock data...</p>
+                    <p className="text-gray-500 mt-2">{t('stock.loadingData')}</p>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center p-8 text-gray-500">
-                    {searchTerm ? "No products match your search" : "No stock data available"}
+                    {searchTerm ? t('stock.noSearchResults') : t('stock.noData')}
                   </td>
                 </tr>
               ) : (
@@ -257,27 +258,28 @@ export default function Stock() {
                         <div>
                           <div className="font-medium text-gray-800">{item.name || "Unknown"}</div>
                           {item.sku && (
-                            <div className="text-xs text-gray-400 font-mono mt-0.5">SKU: {item.sku}</div>
+                            <div className="text-xs text-gray-400 font-mono mt-0.5">{t('stock.skuLabel')}: {item.sku}</div>
                           )}
                         </div>
                       </td>
 
                       <td className="p-4">
                         <div className="text-right">
-                          <div className={`text-xl font-bold ${isOut ? "text-red-600" :
-                              isLow ? "text-orange-600" :
-                                "text-green-600"
-                            }`}>
+                          <div className={`text-xl font-bold ${
+                            isOut ? "text-red-600" :
+                            isLow ? "text-orange-600" :
+                              "text-green-600"
+                          }`}>
                             {stock}
                           </div>
-                          {/* Progress Bar */}
                           <div className="w-32 ml-auto mt-2">
                             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ${isOut ? "bg-red-500" :
-                                    isLow ? "bg-orange-500" :
-                                      "bg-green-500"
-                                  }`}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isOut ? "bg-red-500" :
+                                  isLow ? "bg-orange-500" :
+                                    "bg-green-500"
+                                }`}
                                 style={{ width: `${stockPercentage}%` }}
                               ></div>
                             </div>
@@ -289,17 +291,17 @@ export default function Stock() {
                         {isOut ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
                             <IonIcon icon={closeCircleOutline} className="text-xs" />
-                            Out of Stock
+                            {t('stock.outOfStockLabel')}
                           </span>
                         ) : isLow ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full animate-pulse">
                             <IonIcon icon={warningOutline} className="text-xs" />
-                            Low Stock
+                            {t('stock.lowStockLabel')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                             <IonIcon icon={checkmarkCircleOutline} className="text-xs" />
-                            In Stock
+                            {t('stock.inStockLabel')}
                           </span>
                         )}
                       </td>
@@ -317,14 +319,14 @@ export default function Stock() {
                             <button
                               onClick={() => handleUpdate(item.product_uuid)}
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                              title="Save"
+                              title={t('stock.saveTitle')}
                             >
                               <IonIcon icon={checkmarkOutline} className="text-lg" />
                             </button>
                             <button
                               onClick={() => setEditing(null)}
                               className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                              title="Cancel"
+                              title={t('stock.cancelTitle')}
                             >
                               <IonIcon icon={closeOutline} className="text-lg" />
                             </button>
@@ -340,7 +342,7 @@ export default function Stock() {
                               setNewStock(stock);
                             }}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                            title="Update Stock"
+                            title={t('stock.updateTitle')}
                           >
                             <IonIcon icon={createOutline} className="text-lg" />
                           </button>
@@ -364,9 +366,9 @@ export default function Stock() {
                 <IonIcon icon={warningOutline} className="text-orange-600 text-xl" />
               </div>
               <div>
-                <p className="text-sm font-medium text-orange-800">Low Stock Alert</p>
+                <p className="text-sm font-medium text-orange-800">{t('stock.lowStockAlert')}</p>
                 <p className="text-xs text-orange-600">
-                  {lowStockCount} product{lowStockCount !== 1 ? 's are' : ' is'} running low on stock. Update inventory soon.
+                  {t('stock.lowStockMessage', { count: lowStockCount })}
                 </p>
               </div>
             </div>
@@ -374,7 +376,7 @@ export default function Stock() {
               onClick={() => setFilterStatus("low")}
               className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-all"
             >
-              View Low Stock Items
+              {t('stock.viewLowStock')}
             </button>
           </div>
         </div>

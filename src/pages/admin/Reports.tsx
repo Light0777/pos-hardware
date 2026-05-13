@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getTopProducts,
   getStockReport,
@@ -18,6 +19,7 @@ import {
 } from "ionicons/icons";
 
 export default function Reports() {
+  const { t } = useTranslation();
   const [top, setTop] = useState<any[]>([]);
   const [stock, setStock] = useState<any[]>([]);
   const [profit, setProfit] = useState<any>({
@@ -44,21 +46,18 @@ export default function Reports() {
       console.log("Stock Response:", stockRes);
       console.log("Profit Response:", profitRes);
 
-      // Handle Top Products
       if (topRes.status === "fulfilled" && Array.isArray(topRes.value)) {
         setTop(topRes.value);
       } else {
         setTop([]);
       }
 
-      // Handle Stock
       if (stockRes.status === "fulfilled" && Array.isArray(stockRes.value)) {
         setStock(stockRes.value);
       } else {
         setStock([]);
       }
 
-      // Handle Profit
       if (profitRes.status === "fulfilled" && profitRes.value) {
         setProfit({
           revenue: profitRes.value.revenue || 0,
@@ -69,18 +68,17 @@ export default function Reports() {
         setProfit({ revenue: 0, cost: 0, profit: 0 });
       }
 
-      // Check if all data is empty
       const hasNoData = 
         (topRes.status !== "fulfilled" || topRes.value?.length === 0) &&
         (stockRes.status !== "fulfilled" || stockRes.value?.length === 0) &&
         (profitRes.status !== "fulfilled" || profitRes.value?.profit === 0);
       
       if (hasNoData) {
-        setError("No report data available. Please add some products and sales first.");
+        setError(t('reports.noDataError'));
       }
     } catch (err) {
       console.error("Reports error:", err);
-      setError("Failed to load reports");
+      setError(t('reports.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,7 +98,7 @@ export default function Reports() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading reports...</p>
+          <p className="text-gray-500">{t('reports.loadingReports')}</p>
         </div>
       </div>
     );
@@ -111,8 +109,8 @@ export default function Reports() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">Reports</h1>
-          <p className="text-gray-500 text-sm mt-1">Analytics and insights for your business</p>
+          <h1 className="text-3xl font-bold text-white">{t('reports.title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('reports.subtitle')}</p>
         </div>
         <button
           onClick={handleRefresh}
@@ -120,7 +118,7 @@ export default function Reports() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
         >
           <IonIcon icon={refreshOutline} className={`text-xl ${refreshing ? 'animate-spin' : ''}`} />
-          <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          <span>{refreshing ? t('reports.refreshing') : t('reports.refresh')}</span>
         </button>
       </div>
 
@@ -136,7 +134,7 @@ export default function Reports() {
               onClick={() => setError(null)}
               className="text-yellow-600 hover:text-yellow-800"
             >
-              Dismiss
+              {t('reports.dismiss')}
             </button>
           </div>
         </div>
@@ -147,7 +145,7 @@ export default function Reports() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-green-100 text-sm">Total Revenue</p>
+              <p className="text-green-100 text-sm">{t('reports.totalRevenue')}</p>
               <p className="text-2xl font-bold mt-1">₹{profit.revenue?.toLocaleString() || 0}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -159,7 +157,7 @@ export default function Reports() {
         <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-red-100 text-sm">Total Cost</p>
+              <p className="text-red-100 text-sm">{t('reports.totalCost')}</p>
               <p className="text-2xl font-bold mt-1">₹{profit.cost?.toLocaleString() || 0}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -171,7 +169,7 @@ export default function Reports() {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-blue-100 text-sm">Net Profit</p>
+              <p className="text-blue-100 text-sm">{t('reports.netProfit')}</p>
               <p className="text-2xl font-bold mt-1">₹{profit.profit?.toLocaleString() || 0}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -186,7 +184,7 @@ export default function Reports() {
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-gray-500 text-sm">Profit Margin</p>
+              <p className="text-gray-500 text-sm">{t('reports.profitMargin')}</p>
               <p className="text-3xl font-bold text-blue-600">
                 {((profit.profit / profit.revenue) * 100).toFixed(1)}%
               </p>
@@ -208,15 +206,15 @@ export default function Reports() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
           <div className="flex items-center gap-2">
             <IonIcon icon={trophyOutline} className="text-white text-xl" />
-            <h2 className="text-white font-semibold text-lg">Top Selling Products</h2>
+            <h2 className="text-white font-semibold text-lg">{t('reports.topSellingProducts')}</h2>
           </div>
         </div>
         <div className="divide-y divide-gray-100">
           {top.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
               <IonIcon icon={cubeOutline} className="text-5xl mx-auto mb-3" />
-              <p>No sales data yet</p>
-              <p className="text-sm mt-1">Products will appear here when they are sold</p>
+              <p>{t('reports.noSalesData')}</p>
+              <p className="text-sm mt-1">{t('reports.noSalesSubtext')}</p>
             </div>
           ) : (
             top.map((p, idx) => (
@@ -231,12 +229,12 @@ export default function Reports() {
                     {idx + 1}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800">{p.product?.name || p.name || "Unknown"}</p>
-                    {p.sku && <p className="text-xs text-gray-400">SKU: {p.sku}</p>}
+                    <p className="font-medium text-gray-800">{p.product?.name || p.name || t('reports.unknown')}</p>
+                    {p.sku && <p className="text-xs text-gray-400">{t('reports.skuLabel')}: {p.sku}</p>}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-blue-600">{p.total_qty || p.total_sold || 0} units</p>
+                  <p className="font-semibold text-blue-600">{p.total_qty || p.total_sold || 0} {t('reports.units')}</p>
                   {p.revenue && <p className="text-xs text-green-600">₹{p.revenue.toLocaleString()}</p>}
                 </div>
               </div>
@@ -250,15 +248,15 @@ export default function Reports() {
         <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
           <div className="flex items-center gap-2">
             <IonIcon icon={cubeOutline} className="text-white text-xl" />
-            <h2 className="text-white font-semibold text-lg">Stock Status</h2>
+            <h2 className="text-white font-semibold text-lg">{t('reports.stockStatus')}</h2>
           </div>
         </div>
         <div className="divide-y divide-gray-100">
           {stock.length === 0 ? (
             <div className="text-center text-gray-400 py-12">
               <IonIcon icon={cubeOutline} className="text-5xl mx-auto mb-3" />
-              <p>No stock data available</p>
-              <p className="text-sm mt-1">Add products to see inventory levels</p>
+              <p>{t('reports.noStockData')}</p>
+              <p className="text-sm mt-1">{t('reports.noStockSubtext')}</p>
             </div>
           ) : (
             stock.map((s, i) => {
@@ -271,36 +269,35 @@ export default function Reports() {
                 <div key={s.product_uuid || i} className="px-6 py-4 hover:bg-gray-50 transition-all">
                   <div className="flex justify-between items-center mb-2">
                     <div>
-                      <p className="font-medium text-gray-800">{s.name || "Unknown"}</p>
-                      {s.sku && <p className="text-xs text-gray-400">SKU: {s.sku}</p>}
+                      <p className="font-medium text-gray-800">{s.name || t('reports.unknown')}</p>
+                      {s.sku && <p className="text-xs text-gray-400">{t('reports.skuLabel')}: {s.sku}</p>}
                     </div>
                     <div className="text-right">
                       <span className={`font-semibold ${
                         isOut ? "text-red-600" : isLow ? "text-orange-600" : "text-green-600"
                       }`}>
-                        {stockLevel} units
+                        {stockLevel} {t('reports.units')}
                       </span>
                       <div className="mt-1">
                         {isOut ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
                             <IonIcon icon={closeCircleOutline} className="text-xs" />
-                            Out of Stock
+                            {t('reports.outOfStock')}
                           </span>
                         ) : isLow ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
                             <IonIcon icon={warningOutline} className="text-xs" />
-                            Low Stock
+                            {t('reports.lowStock')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                             <IonIcon icon={checkmarkCircleOutline} className="text-xs" />
-                            In Stock
+                            {t('reports.inStock')}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  {/* Progress Bar */}
                   {!isOut && (
                     <div className="w-full mt-2">
                       <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -323,20 +320,20 @@ export default function Reports() {
       {/* Summary Stats */}
       {stock.length > 0 && (
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-6 text-white">
-          <h3 className="text-lg font-semibold mb-3">Inventory Summary</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('reports.inventorySummary')}</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-gray-400 text-sm">Total Products</p>
+              <p className="text-gray-400 text-sm">{t('reports.totalProducts')}</p>
               <p className="text-2xl font-bold">{stock.length}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Low Stock Items</p>
+              <p className="text-gray-400 text-sm">{t('reports.lowStockItems')}</p>
               <p className="text-2xl font-bold text-orange-400">
                 {stock.filter((s: any) => s.stock <= 10 && s.stock > 0).length}
               </p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Out of Stock</p>
+              <p className="text-gray-400 text-sm">{t('reports.outOfStockItems')}</p>
               <p className="text-2xl font-bold text-red-400">
                 {stock.filter((s: any) => s.stock === 0).length}
               </p>

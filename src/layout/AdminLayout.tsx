@@ -1,5 +1,6 @@
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import Topbar from "../components/Topbar";
 import {
   home,
@@ -91,6 +92,7 @@ function NavSection({ title, children }: NavSectionProps) {
 // Structure: Topbar at top, Sidebar on left, Content area on right
 // ============================================
 export default function AdminLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();      // Hook for programmatic navigation
   const location = useLocation();      // Hook to get current URL path
   const { user } = useAuth();          // Get logged-in user data from auth context
@@ -101,7 +103,7 @@ export default function AdminLayout() {
   // ============================================
   // Show loading message while user data is being fetched
   if (!user) {
-    return <div className="p-4">Loading user...</div>;
+    return <div className="p-4">{t('adminLayout.loadingUser')}</div>;
   }
 
   // Get current path to determine active menu item
@@ -121,10 +123,10 @@ export default function AdminLayout() {
       <div className="p-4">
         <div className="text-start">
           <div className="text-lg font-bold text-white">
-            Admin Panel
+            {t('adminLayout.adminPanel')}
           </div>
           <div className="text-xs text-gray-400 capitalize mt-1">
-            {user.role}  {/* Displays: owner, manager, etc. */}
+            {t(`adminLayout.roles.${user.role}`)}  {/* Displays: owner, manager, etc. */}
           </div>
         </div>
       </div>
@@ -136,7 +138,7 @@ export default function AdminLayout() {
         {/* DASHBOARD SECTION - Only visible to 'owner' role */}
         {user.role === "owner" && (
           <NavItem
-            label="Dashboard"
+            label={t('adminLayout.nav.dashboard')}
             path="/admin/dashboard"
             currentPath={currentPath}
             icon={home}
@@ -147,9 +149,9 @@ export default function AdminLayout() {
         {/* MANAGEMENT SECTION - Visible to 'owner' and 'manager' roles */}
         {/* Contains: Products, Stock, Sales, Customer */}
         {["owner", "manager"].includes(user.role) && (
-          <NavSection title="MANAGEMENT">
+          <NavSection title={t('adminLayout.sections.management')}>
             <NavItem
-              label="Products"
+              label={t('adminLayout.nav.products')}
               path="/admin/products"
               currentPath={currentPath}
               icon={cubeOutline}
@@ -157,7 +159,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Stock"
+              label={t('adminLayout.nav.stock')}
               path="/admin/stock"
               currentPath={currentPath}
               icon={documentTextOutline}
@@ -165,7 +167,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Sales"
+              label={t('adminLayout.nav.sales')}
               path="/admin/sales"
               currentPath={currentPath}
               icon={documentTextOutline}
@@ -173,7 +175,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Customer"
+              label={t('adminLayout.nav.customer')}
               path="/admin/customer"
               currentPath={currentPath}
               icon={peopleOutline}
@@ -185,9 +187,9 @@ export default function AdminLayout() {
         {/* BUSINESS SECTION - Only visible to 'owner' role */}
         {/* Contains: Reports, Supplier, Purchase, Purchases, Staff, Settings */}
         {user.role === "owner" && (
-          <NavSection title="BUSINESS">
+          <NavSection title={t('adminLayout.sections.business')}>
             <NavItem
-              label="Reports"
+              label={t('adminLayout.nav.reports')}
               path="/admin/reports"
               currentPath={currentPath}
               icon={barChartOutline}
@@ -195,7 +197,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Supplier"
+              label={t('adminLayout.nav.supplier')}
               path="/admin/supplier"
               currentPath={currentPath}
               icon={peopleCircleOutline}
@@ -203,7 +205,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Purchase"
+              label={t('adminLayout.nav.purchase')}
               path="/admin/purchase"
               currentPath={currentPath}
               icon={cartOutline}
@@ -211,7 +213,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Purchases"
+              label={t('adminLayout.nav.purchases')}
               path="/admin/purchases"
               currentPath={currentPath}
               icon={documentTextOutline}
@@ -219,7 +221,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Staff"
+              label={t('adminLayout.nav.staff')}
               path="/admin/staff"
               currentPath={currentPath}
               icon={peopleCircleOutline}
@@ -227,7 +229,7 @@ export default function AdminLayout() {
             />
 
             <NavItem
-              label="Settings"
+              label={t('adminLayout.nav.settings')}
               path="/admin/settings"
               currentPath={currentPath}
               icon={settingsOutline}
@@ -238,9 +240,9 @@ export default function AdminLayout() {
 
         {/* ACCOUNT SECTION - Visible to all roles */}
         {/* Contains: Profile */}
-        <NavSection title="ACCOUNT">
+        <NavSection title={t('adminLayout.sections.account')}>
           <NavItem
-            label="Profile"
+            label={t('adminLayout.nav.profile')}
             path="/admin/profile"
             currentPath={currentPath}
             icon={personCircleOutline}
@@ -257,7 +259,7 @@ export default function AdminLayout() {
           className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 p-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
         >
           <IonIcon icon={logOutOutline} className="text-lg" />
-          <span>Go to POS</span>
+          <span>{t('adminLayout.goToPos')}</span>
         </button>
       </div>
     </div>
@@ -302,7 +304,7 @@ export default function AdminLayout() {
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#141414] text-white z-50 md:hidden overflow-y-auto">
               {/* Close button at top of mobile sidebar */}
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                <div className="text-lg font-bold text-blue-500">Admin Panel</div>
+                <div className="text-lg font-bold text-blue-500">{t('adminLayout.adminPanel')}</div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 text-gray-400 hover:text-white"

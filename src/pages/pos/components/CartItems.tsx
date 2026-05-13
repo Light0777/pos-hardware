@@ -1,6 +1,7 @@
 // src/pages/pos/components/CartItems.tsx
 import { IonIcon } from '@ionic/react';
 import { addOutline, removeOutline, trashOutline } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 
 interface CartItem {
   id: number;
@@ -17,18 +18,20 @@ interface CartItem {
 
 interface CartItemsProps {
   items: CartItem[];
-  onIncrease: (item: CartItem) => void;  // ✅ Changed to accept item object
-  onDecrease: (item: CartItem) => void;  // ✅ Changed to accept item object
+  onIncrease: (item: CartItem) => void;
+  onDecrease: (item: CartItem) => void;
   onRemove?: (item: CartItem) => void;
 }
 
 export default function CartItems({ items, onIncrease, onDecrease, onRemove }: CartItemsProps) {
+  const { t } = useTranslation();
+
   if (!items || items.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <p className="text-sm">No items in cart</p>
-          <p className="text-xs mt-1">Click on products to add</p>
+          <p className="text-sm">{t('pos.noItems')}</p>
+          <p className="text-xs mt-1">{t('pos.clickToAdd')}</p>
         </div>
       </div>
     );
@@ -45,7 +48,7 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
           <div className="flex justify-between items-start mb-2">
             <div className="flex-1">
               <h3 className="text-white font-medium text-sm truncate">
-                {item.product?.name || 'Unknown Product'}
+                {item.product?.name || t('pos.unknownProduct')}
               </h3>
               {item.product?.barcode && (
                 <p className="text-gray-500 text-xs">#{item.product.barcode}</p>
@@ -68,10 +71,9 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Quantity Controls */}
               <div className="flex items-center gap-2 bg-[#333333] rounded-lg">
                 <button
-                  onClick={() => onDecrease(item)}  // ✅ Pass the whole item
+                  onClick={() => onDecrease(item)}
                   className="w-7 h-7 flex items-center justify-center text-white hover:bg-[#444444] rounded-l-lg transition-colors"
                 >
                   <IonIcon icon={removeOutline} className="text-sm" />
@@ -82,7 +84,7 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
                 </span>
                 
                 <button
-                  onClick={() => onIncrease(item)}  // ✅ Pass the whole item
+                  onClick={() => onIncrease(item)}
                   className="w-7 h-7 flex items-center justify-center text-white hover:bg-[#444444] rounded-r-lg transition-colors"
                 >
                   <IonIcon icon={addOutline} className="text-sm" />
@@ -93,7 +95,7 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
 
           {/* Subtotal */}
           <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-700">
-            <span className="text-gray-400 text-xs">Subtotal:</span>
+            <span className="text-gray-400 text-xs">{t('pos.subtotal')}:</span>
             <span className="text-green-500 text-sm font-semibold">
               ₹{(item.price * item.quantity).toFixed(2)}
             </span>
@@ -102,7 +104,9 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
           {/* Tax Info */}
           {item.tax_percent > 0 && (
             <div className="flex justify-between items-center mt-1">
-              <span className="text-gray-500 text-xs">GST ({item.tax_percent}%):</span>
+              <span className="text-gray-500 text-xs">
+                {t('pos.taxWithPercent', { percent: item.tax_percent })}:
+              </span>
               <span className="text-gray-400 text-xs">
                 ₹{((item.price * item.tax_percent / 100) * item.quantity).toFixed(2)}
               </span>

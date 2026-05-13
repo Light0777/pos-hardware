@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getStaff,
   createStaff,
@@ -22,6 +23,7 @@ import {
 } from "ionicons/icons";
 
 export default function StaffPage() {
+  const { t } = useTranslation();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [editing, setEditing] = useState<Staff | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,17 +51,16 @@ export default function StaffPage() {
       setStaff(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Load staff error:", err);
-      setError("Failed to load staff members");
+      setError(t('staff.loadError'));
       setStaff([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ➕ CREATE
   const handleCreate = async () => {
     if (!form.name || !form.email || !form.password) {
-      setError("Name, email, and password are required");
+      setError(t('staff.validationRequired'));
       return;
     }
 
@@ -70,7 +71,7 @@ export default function StaffPage() {
       const newStaff = await createStaff(form);
       setStaff((prev) => [...prev, newStaff]);
       
-      setSuccess("Staff member created successfully!");
+      setSuccess(t('staff.createSuccess'));
       setTimeout(() => setSuccess(null), 3000);
       
       setForm({
@@ -83,13 +84,12 @@ export default function StaffPage() {
       await loadStaff();
     } catch (err) {
       console.error("Create staff error:", err);
-      setError("Failed to create staff member");
+      setError(t('staff.createError'));
     } finally {
       setLoading(false);
     }
   };
 
-  // ✏️ EDIT START
   const startEdit = (s: Staff) => {
     setEditing(s);
     setForm({
@@ -101,7 +101,6 @@ export default function StaffPage() {
     setShowForm(true);
   };
 
-  // 💾 SAVE EDIT
   const handleUpdate = async () => {
     if (!editing) return;
 
@@ -114,7 +113,7 @@ export default function StaffPage() {
         prev.map((s) => (s.user_uuid === editing.user_uuid ? updated : s))
       );
       
-      setSuccess("Staff member updated successfully!");
+      setSuccess(t('staff.updateSuccess'));
       setTimeout(() => setSuccess(null), 3000);
       
       setEditing(null);
@@ -128,27 +127,26 @@ export default function StaffPage() {
       await loadStaff();
     } catch (err) {
       console.error("Update staff error:", err);
-      setError("Failed to update staff member");
+      setError(t('staff.updateError'));
     } finally {
       setLoading(false);
     }
   };
 
-  // 🗑️ DELETE
   const handleDelete = async (uuid: string) => {
-    if (!confirm("Delete this staff member?")) return;
+    if (!confirm(t('staff.deleteConfirm'))) return;
 
     setLoading(true);
     setError(null);
     
     try {
       await deleteStaff(uuid);
-      setSuccess("Staff member deleted successfully!");
+      setSuccess(t('staff.deleteSuccess'));
       setTimeout(() => setSuccess(null), 3000);
       await loadStaff();
     } catch (err) {
       console.error("Delete staff error:", err);
-      setError("Failed to delete staff member");
+      setError(t('staff.deleteError'));
     } finally {
       setLoading(false);
     }
@@ -166,13 +164,11 @@ export default function StaffPage() {
     setError(null);
   };
 
-  // Filter staff based on search
   const filteredStaff = staff.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Stats
   const totalStaff = staff.length;
   const managers = staff.filter((s) => s.role === "manager").length;
   const cashiers = staff.filter((s) => s.role === "cashier").length;
@@ -182,9 +178,9 @@ export default function StaffPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="font-inter text-start">
-          <h1 className="text-3xl font-bold text-white font-inter">Staff Management</h1>
+          <h1 className="text-3xl font-bold text-white font-inter">{t('staff.title')}</h1>
           <p className="text-gray-500 text-sm font-inter">
-            Manage your team members and their roles
+            {t('staff.subtitle')}
           </p>
         </div>
         <button
@@ -202,7 +198,7 @@ export default function StaffPage() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <IonIcon icon={addOutline} className="text-xl" />
-          <span>Add Staff</span>
+          <span>{t('staff.addStaff')}</span>
         </button>
       </div>
 
@@ -238,7 +234,7 @@ export default function StaffPage() {
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-purple-100 text-sm">Total Staff</p>
+              <p className="text-purple-100 text-sm">{t('staff.totalStaff')}</p>
               <p className="text-3xl font-bold mt-1">{totalStaff}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -250,7 +246,7 @@ export default function StaffPage() {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-blue-100 text-sm">Managers</p>
+              <p className="text-blue-100 text-sm">{t('staff.managers')}</p>
               <p className="text-3xl font-bold mt-1">{managers}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -262,7 +258,7 @@ export default function StaffPage() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-green-100 text-sm">Cashiers</p>
+              <p className="text-green-100 text-sm">{t('staff.cashiers')}</p>
               <p className="text-3xl font-bold mt-1">{cashiers}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -280,7 +276,7 @@ export default function StaffPage() {
         />
         <input
           type="text"
-          placeholder="Search staff by name or email..."
+          placeholder={t('staff.searchPlaceholder')}
           className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -297,11 +293,11 @@ export default function StaffPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <IonIcon icon={peopleOutline} className="text-2xl" />
                     <h2 className="text-2xl font-bold">
-                      {editing ? "Edit Staff Member" : "Add New Staff"}
+                      {editing ? t('staff.editStaff') : t('staff.addNewStaff')}
                     </h2>
                   </div>
                   <p className="text-gray-300 text-sm">
-                    {editing ? "Update staff information" : "Create a new staff account"}
+                    {editing ? t('staff.editSubtext') : t('staff.createSubtext')}
                   </p>
                 </div>
                 <button
@@ -316,11 +312,11 @@ export default function StaffPage() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name *
+                  {t('staff.fullNameLabel')} *
                 </label>
                 <input
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter staff name"
+                  placeholder={t('staff.namePlaceholder')}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
@@ -328,7 +324,7 @@ export default function StaffPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address *
+                  {t('staff.emailLabel')} *
                 </label>
                 <input
                   type="email"
@@ -341,12 +337,12 @@ export default function StaffPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {editing ? "Password (leave blank to keep current)" : "Password *"}
+                  {editing ? t('staff.passwordEditLabel') : t('staff.passwordLabel')}
                 </label>
                 <input
                   type="password"
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={editing ? "Enter new password (optional)" : "Enter password"}
+                  placeholder={editing ? t('staff.passwordEditPlaceholder') : t('staff.passwordPlaceholder')}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
@@ -354,18 +350,18 @@ export default function StaffPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role *
+                  {t('staff.roleLabel')} *
                 </label>
                 <select
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                 >
-                  <option value="cashier">Cashier</option>
-                  <option value="manager">Manager</option>
+                  <option value="cashier">{t('staff.roleCashier')}</option>
+                  <option value="manager">{t('staff.roleManager')}</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Managers have access to products and reports, cashiers can only process sales
+                  {t('staff.roleHint')}
                 </p>
               </div>
 
@@ -377,10 +373,10 @@ export default function StaffPage() {
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    {editing ? "Updating..." : "Creating..."}
+                    {editing ? t('staff.updating') : t('staff.creating')}
                   </span>
                 ) : (
-                  editing ? "Update Staff Member" : "Create Staff Member"
+                  editing ? t('staff.updateButton') : t('staff.createButton')
                 )}
               </button>
             </div>
@@ -394,7 +390,7 @@ export default function StaffPage() {
           <div className="flex items-center gap-2">
             <IonIcon icon={peopleOutline} className="text-white text-xl" />
             <h2 className="text-white font-semibold text-lg">
-              Staff Members ({filteredStaff.length})
+              {t('staff.staffMembers')} ({filteredStaff.length})
             </h2>
           </div>
         </div>
@@ -404,19 +400,19 @@ export default function StaffPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Staff Member
+                  {t('staff.tableStaffMember')}
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Contact
+                  {t('staff.tableContact')}
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Role
+                  {t('staff.tableRole')}
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Status
+                  {t('staff.tableStatus')}
                 </th>
                 <th className="text-center p-4 text-sm font-semibold text-gray-600">
-                  Actions
+                  {t('staff.tableActions')}
                 </th>
               </tr>
             </thead>
@@ -426,7 +422,7 @@ export default function StaffPage() {
                   <td colSpan={5} className="text-center p-12">
                     <div className="flex flex-col items-center gap-3">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      <p className="text-gray-500">Loading staff...</p>
+                      <p className="text-gray-500">{t('staff.loadingStaff')}</p>
                     </div>
                   </td>
                 </tr>
@@ -435,9 +431,9 @@ export default function StaffPage() {
                   <td colSpan={5} className="text-center p-12">
                     <div className="flex flex-col items-center gap-2">
                       <IonIcon icon={peopleOutline} className="text-6xl text-gray-300" />
-                      <p className="text-gray-500 text-lg">No staff members found</p>
+                      <p className="text-gray-500 text-lg">{t('staff.noStaff')}</p>
                       <p className="text-gray-400 text-sm">
-                        {searchTerm ? "No results match your search" : "Click 'Add Staff' to create your first team member"}
+                        {searchTerm ? t('staff.noSearchResults') : t('staff.noStaffSubtext')}
                       </p>
                     </div>
                   </td>
@@ -456,7 +452,7 @@ export default function StaffPage() {
                         <div>
                           <div className="font-medium text-gray-800">{s.name}</div>
                           <div className="text-xs text-gray-400 font-mono">
-                            ID: {s.user_uuid?.slice(0, 8)}...
+                            {t('staff.idLabel')}: {s.user_uuid?.slice(0, 8)}...
                           </div>
                         </div>
                       </div>
@@ -474,13 +470,13 @@ export default function StaffPage() {
                           : "bg-blue-100 text-blue-700"
                       }`}>
                         <IonIcon icon={peopleOutline} className="text-xs" />
-                        {s.role.charAt(0).toUpperCase() + s.role.slice(1)}
+                        {s.role === "manager" ? t('staff.roleManager') : t('staff.roleCashier')}
                       </span>
                     </td>
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                         <IonIcon icon={checkmarkCircleOutline} className="text-xs" />
-                        Active
+                        {t('staff.activeStatus')}
                       </span>
                     </td>
                     <td className="p-4 text-center">
@@ -488,14 +484,14 @@ export default function StaffPage() {
                         <button
                           onClick={() => startEdit(s)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit"
+                          title={t('staff.editTitle')}
                         >
                           <IonIcon icon={createOutline} className="text-lg" />
                         </button>
                         <button
                           onClick={() => handleDelete(s.user_uuid)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
+                          title={t('staff.deleteTitle')}
                         >
                           <IonIcon icon={trashOutline} className="text-lg" />
                         </button>

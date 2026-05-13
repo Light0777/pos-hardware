@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { IonIcon } from '@ionic/react';
 import { chevronDownOutline, personOutline, addCircleOutline, searchOutline, closeCircleOutline } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 
 interface CustomerSelectProps {
   customers: any[];
@@ -15,6 +16,7 @@ export default function CustomerSelect({
   onSelectCustomer,
   onAddNew,
 }: CustomerSelectProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -59,8 +61,12 @@ export default function CustomerSelect({
           <IonIcon icon={personOutline} className="text-gray-400 text-lg" />
           <span>
             {selectedCustomer
-              ? `${selectedCustomer.name}${selectedCustomer.credit_balance > 0 ? ` (Due: ₹${selectedCustomer.credit_balance})` : ''}`
-              : 'Walk-in Customer'}
+              ? `${selectedCustomer.name}${
+                  selectedCustomer.credit_balance > 0
+                    ? ` (${t('pos.dueLabel')}: ₹${selectedCustomer.credit_balance})`
+                    : ''
+                }`
+              : t('pos.walkInCustomer')}
           </span>
         </div>
         <IonIcon
@@ -84,7 +90,7 @@ export default function CustomerSelect({
                 pattern="[0-9]*"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by phone number..."
+                placeholder={t('pos.searchByPhone')}
                 className="flex-1 bg-transparent text-white text-sm outline-none placeholder-gray-500"
               />
               {searchQuery.length > 0 && (
@@ -108,8 +114,8 @@ export default function CustomerSelect({
             >
               <IonIcon icon={personOutline} className="text-gray-400 text-2xl" />
               <div className="text-start">
-                <div className="text-white font-medium">Walk-in Customer</div>
-                <div className="text-xs text-gray-400">No credit account needed</div>
+                <div className="text-white font-medium">{t('pos.walkInCustomer')}</div>
+                <div className="text-xs text-gray-400">{t('pos.noCreditAccountNeeded')}</div>
               </div>
             </div>
           )}
@@ -135,7 +141,7 @@ export default function CustomerSelect({
                     </div>
                     {c.credit_balance > 0 && (
                       <div className="text-right shrink-0">
-                        <div className="text-xs text-orange-400">Due Amount</div>
+                        <div className="text-xs text-orange-400">{t('pos.dueAmount')}</div>
                         <div className="text-sm font-semibold text-orange-400">₹{c.credit_balance}</div>
                       </div>
                     )}
@@ -144,7 +150,7 @@ export default function CustomerSelect({
               ))
             ) : (
               <div className="p-4 text-center text-gray-500 text-sm">
-                No customer found for <span className="text-gray-400">"{searchQuery}"</span>
+                {t('pos.noCustomerFoundFor', { query: searchQuery })}
               </div>
             )}
           </div>
@@ -159,7 +165,7 @@ export default function CustomerSelect({
               }}
             >
               <IonIcon icon={addCircleOutline} className="text-lg" />
-              <span>Add New Customer</span>
+              <span>{t('pos.addNewCustomer')}</span>
             </button>
           </div>
         </div>

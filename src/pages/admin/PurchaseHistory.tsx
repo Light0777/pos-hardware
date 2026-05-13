@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getPurchases } from "../../renderer/services/purchaseApi";
 import { IonIcon } from "@ionic/react";
 import {
@@ -14,6 +15,7 @@ import {
 } from "ionicons/icons";
 
 export default function PurchaseHistory() {
+  const { t } = useTranslation();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,6 @@ export default function PurchaseHistory() {
       const response = await getPurchases();
       console.log("📊 Purchases API Response:", response);
       
-      // Handle different response structures
       let purchasesData = [];
       if (Array.isArray(response)) {
         purchasesData = response;
@@ -49,19 +50,17 @@ export default function PurchaseHistory() {
       setPurchases(purchasesData);
     } catch (e) {
       console.error("Error loading purchases:", e);
-      setError("Failed to load purchase history");
+      setError(t('purchaseHistory.loadError'));
       setPurchases([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate statistics
   const totalPurchases = purchases.length;
   const totalSpent = purchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
   const averagePurchase = totalPurchases > 0 ? totalSpent / totalPurchases : 0;
 
-  // Helper function to safely format numbers
   const formatNumber = (value: any) => {
     const num = Number(value);
     return isNaN(num) ? 0 : num;
@@ -72,7 +71,7 @@ export default function PurchaseHistory() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-white">Loading purchases...</p>
+          <p className="text-white">{t('purchaseHistory.loading')}</p>
         </div>
       </div>
     );
@@ -84,10 +83,10 @@ export default function PurchaseHistory() {
       <div className="flex justify-between items-center">
         <div className="font-inter text-start">
           <h1 className="text-3xl font-bold text-white font-inter">
-            Purchase History
+            {t('purchaseHistory.title')}
           </h1>
           <p className="text-gray-500 text-sm font-inter">
-            Track and manage all your purchase orders
+            {t('purchaseHistory.subtitle')}
           </p>
         </div>
         <button
@@ -96,7 +95,7 @@ export default function PurchaseHistory() {
         >
           <div className="flex items-center gap-2">
             <IonIcon icon={cartOutline} className="text-xl" />
-            <span className="font-semibold">Refresh</span>
+            <span className="font-semibold">{t('purchaseHistory.refresh')}</span>
           </div>
         </button>
       </div>
@@ -124,7 +123,7 @@ export default function PurchaseHistory() {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-blue-100 text-sm">Total Purchases</p>
+              <p className="text-blue-100 text-sm">{t('purchaseHistory.totalPurchases')}</p>
               <p className="text-3xl font-bold mt-1">{totalPurchases}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -136,7 +135,7 @@ export default function PurchaseHistory() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-green-100 text-sm">Total Spent</p>
+              <p className="text-green-100 text-sm">{t('purchaseHistory.totalSpent')}</p>
               <p className="text-3xl font-bold mt-1">₹{formatNumber(totalSpent).toLocaleString()}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -148,7 +147,7 @@ export default function PurchaseHistory() {
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div className="text-start">
-              <p className="text-purple-100 text-sm">Average Purchase</p>
+              <p className="text-purple-100 text-sm">{t('purchaseHistory.averagePurchase')}</p>
               <p className="text-3xl font-bold mt-1">₹{formatNumber(averagePurchase).toFixed(0)}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -164,10 +163,10 @@ export default function PurchaseHistory() {
           <div className="flex items-center gap-2">
             <IonIcon icon={cartOutline} className="text-white text-xl" />
             <h2 className="text-white font-semibold text-lg">
-              Purchase Orders
+              {t('purchaseHistory.purchaseOrders')}
             </h2>
             <span className="ml-auto text-gray-400 text-sm">
-              {purchases.length} records
+              {t('purchaseHistory.recordsCount', { count: purchases.length })}
             </span>
           </div>
         </div>
@@ -177,19 +176,19 @@ export default function PurchaseHistory() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Supplier
+                  {t('purchaseHistory.tableSupplier')}
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Items
+                  {t('purchaseHistory.tableItems')}
                 </th>
                 <th className="text-right p-4 text-sm font-semibold text-gray-600">
-                  Total Amount
+                  {t('purchaseHistory.tableTotalAmount')}
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-600">
-                  Date
+                  {t('purchaseHistory.tableDate')}
                 </th>
                 <th className="text-center p-4 text-sm font-semibold text-gray-600">
-                  Status
+                  {t('purchaseHistory.tableStatus')}
                 </th>
               </tr>
             </thead>
@@ -199,9 +198,9 @@ export default function PurchaseHistory() {
                   <td colSpan={5} className="text-center p-12">
                     <div className="flex flex-col items-center gap-2">
                       <IonIcon icon={cartOutline} className="text-6xl text-gray-300" />
-                      <p className="text-gray-500 text-lg">No purchases found</p>
+                      <p className="text-gray-500 text-lg">{t('purchaseHistory.noPurchases')}</p>
                       <p className="text-gray-400 text-sm">
-                        Create your first purchase order to get started
+                        {t('purchaseHistory.noPurchasesSubtext')}
                       </p>
                     </div>
                   </td>
@@ -222,7 +221,7 @@ export default function PurchaseHistory() {
                         </div>
                         <div>
                           <div className="font-medium text-gray-800">
-                            {purchase.supplier?.name || purchase.supplier_name || "Walk-in Supplier"}
+                            {purchase.supplier?.name || purchase.supplier_name || t('purchaseHistory.walkInSupplier')}
                           </div>
                           {purchase.supplier?.phone && (
                             <div className="text-xs text-gray-400">
@@ -234,7 +233,7 @@ export default function PurchaseHistory() {
                     </td>
                     <td className="p-4">
                       <div className="text-sm text-gray-600">
-                        {purchase.items?.length || 0} item(s)
+                        {t('purchaseHistory.itemsCount', { count: purchase.items?.length || 0 })}
                       </div>
                       <div className="text-xs text-gray-400 truncate max-w-[200px]">
                         {purchase.items?.slice(0, 2).map((item: any) => 
@@ -261,7 +260,7 @@ export default function PurchaseHistory() {
                     <td className="p-4 text-center">
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                         <IonIcon icon={checkmarkCircleOutline} className="text-xs" />
-                        Completed
+                        {t('purchaseHistory.statusCompleted')}
                       </span>
                     </td>
                   </tr>
@@ -282,10 +281,10 @@ export default function PurchaseHistory() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <IonIcon icon={documentTextOutline} className="text-2xl" />
-                    <h2 className="text-2xl font-bold">Purchase Details</h2>
+                    <h2 className="text-2xl font-bold">{t('purchaseHistory.purchaseDetails')}</h2>
                   </div>
                   <p className="text-gray-300 text-sm">
-                    Order #{selected.purchase_uuid?.slice(0, 8).toUpperCase() || 'N/A'}
+                    {t('purchaseHistory.orderNumber')} #{selected.purchase_uuid?.slice(0, 8).toUpperCase() || 'N/A'}
                   </p>
                 </div>
                 <button
@@ -303,24 +302,24 @@ export default function PurchaseHistory() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <IonIcon icon={peopleOutline} className="text-blue-600" />
-                  <h3 className="font-semibold text-gray-800">Supplier Information</h3>
+                  <h3 className="font-semibold text-gray-800">{t('purchaseHistory.supplierInformation')}</h3>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Name:</span>
+                    <span className="text-gray-500">{t('purchaseHistory.nameLabel')}:</span>
                     <span className="font-medium text-gray-800">
-                      {selected.supplier?.name || selected.supplier_name || "Walk-in Supplier"}
+                      {selected.supplier?.name || selected.supplier_name || t('purchaseHistory.walkInSupplier')}
                     </span>
                   </div>
                   {selected.supplier?.phone && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Phone:</span>
+                      <span className="text-gray-500">{t('purchaseHistory.phoneLabel')}:</span>
                       <span className="text-gray-800">{selected.supplier.phone}</span>
                     </div>
                   )}
                   {selected.supplier?.email && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Email:</span>
+                      <span className="text-gray-500">{t('purchaseHistory.emailLabel')}:</span>
                       <span className="text-gray-800">{selected.supplier.email}</span>
                     </div>
                   )}
@@ -331,18 +330,18 @@ export default function PurchaseHistory() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <IonIcon icon={calendarOutline} className="text-blue-600" />
-                  <h3 className="font-semibold text-gray-800">Purchase Information</h3>
+                  <h3 className="font-semibold text-gray-800">{t('purchaseHistory.purchaseInformation')}</h3>
                 </div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Date:</span>
+                    <span className="text-gray-500">{t('purchaseHistory.dateLabel')}:</span>
                     <span className="text-gray-800">
                       {selected.created_at ? new Date(selected.created_at).toLocaleString() : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Items:</span>
-                    <span className="text-gray-800">{selected.items?.length || 0} products</span>
+                    <span className="text-gray-500">{t('purchaseHistory.itemsLabel')}:</span>
+                    <span className="text-gray-800">{t('purchaseHistory.productsCount', { count: selected.items?.length || 0 })}</span>
                   </div>
                 </div>
               </div>
@@ -351,20 +350,20 @@ export default function PurchaseHistory() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <IonIcon icon={cartOutline} className="text-blue-600" />
-                  <h3 className="font-semibold text-gray-800">Items Purchased</h3>
+                  <h3 className="font-semibold text-gray-800">{t('purchaseHistory.itemsPurchased')}</h3>
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-3 text-xs font-semibold text-gray-500 pb-2 border-b border-gray-200">
-                    <span>Product</span>
-                    <span className="text-center">Quantity</span>
-                    <span className="text-right">Cost Price</span>
+                    <span>{t('purchaseHistory.productLabel')}</span>
+                    <span className="text-center">{t('purchaseHistory.quantityLabel')}</span>
+                    <span className="text-right">{t('purchaseHistory.costPriceLabel')}</span>
                   </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {selected.items && selected.items.length > 0 ? (
                       selected.items.map((item: any, i: number) => (
                         <div key={i} className="grid grid-cols-3 text-sm">
                           <span className="text-gray-800">
-                            {item.product?.name || item.name || "Unknown Product"}
+                            {item.product?.name || item.name || t('purchaseHistory.unknownProduct')}
                           </span>
                           <span className="text-center text-gray-600">
                             x{item.quantity || 0}
@@ -376,7 +375,7 @@ export default function PurchaseHistory() {
                       ))
                     ) : (
                       <div className="text-center text-gray-500 py-4">
-                        No items details available
+                        {t('purchaseHistory.noItemDetails')}
                       </div>
                     )}
                   </div>
@@ -387,8 +386,8 @@ export default function PurchaseHistory() {
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-gray-600">Total Amount</p>
-                    <p className="text-xs text-gray-500">Including all items</p>
+                    <p className="text-sm text-gray-600">{t('purchaseHistory.totalAmountLabel')}</p>
+                    <p className="text-xs text-gray-500">{t('purchaseHistory.includingAllItems')}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-green-600">
@@ -405,7 +404,7 @@ export default function PurchaseHistory() {
                 onClick={() => setSelected(null)}
                 className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white py-3 rounded-xl font-semibold transition-all duration-200"
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>

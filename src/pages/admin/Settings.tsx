@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getSettings, saveSettings } from "../../renderer/services/settingsApi";
 import { IonIcon } from "@ionic/react";
 import { apiPost } from "../../renderer/services/api";
@@ -17,8 +18,8 @@ import {
 import { createBackup, listBackups, restoreBackup } from "../../renderer/services/settingsApi";
 import { cloudUploadOutline, cloudDownloadOutline, trashOutline } from "ionicons/icons";
 
-
 export default function Settings() {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,11 +40,9 @@ export default function Settings() {
       const res = await getSettings();
       console.log("Settings loaded:", res);
 
-      // Check if response has data
       if (res && Object.keys(res).length > 0) {
         setData(res);
       } else {
-        // Set default values if no settings exist
         setData({
           shop_name: "",
           mobile: "",
@@ -54,8 +53,7 @@ export default function Settings() {
       }
     } catch (err) {
       console.error("Load settings error:", err);
-      setError("Failed to load settings");
-      // Set default values on error
+      setError(t('settings.loadError'));
       setData({
         shop_name: "",
         mobile: "",
@@ -81,25 +79,25 @@ export default function Settings() {
     setBackupLoading(true);
     try {
       await createBackup();
-      setSuccess('Backup created successfully!');
+      setSuccess(t('settings.backupSuccess'));
       await loadBackups();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Backup failed');
+      setError(t('settings.backupError'));
     } finally {
       setBackupLoading(false);
     }
   };
 
   const handleRestore = async (backupName: string) => {
-    if (!confirm(`Restore from ${backupName}? This will overwrite all current data!`)) return;
+    if (!confirm(t('settings.restoreConfirm', { name: backupName }))) return;
     setBackupLoading(true);
     try {
       await restoreBackup(backupName);
-      setSuccess('Restored! Please restart the app.');
+      setSuccess(t('settings.restoreSuccess'));
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
-      setError('Restore failed');
+      setError(t('settings.restoreError'));
     } finally {
       setBackupLoading(false);
     }
@@ -110,10 +108,9 @@ export default function Settings() {
     loadBackups();
   }, []);
 
-
   const handleSave = async () => {
     if (!data?.shop_name) {
-      setError("Shop name is required");
+      setError(t('settings.shopNameRequired'));
       return;
     }
 
@@ -123,11 +120,11 @@ export default function Settings() {
 
     try {
       await saveSettings(data);
-      setSuccess("Settings saved successfully!");
+      setSuccess(t('settings.saveSuccess'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Save settings error:", err);
-      setError("Failed to save settings");
+      setError(t('settings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -142,7 +139,7 @@ export default function Settings() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading settings...</p>
+          <p className="text-gray-500">{t('settings.loadingSettings')}</p>
         </div>
       </div>
     );
@@ -154,12 +151,12 @@ export default function Settings() {
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6">
             <IonIcon icon={warningOutline} className="text-5xl text-red-500 mx-auto mb-4" />
-            <p className="text-red-700">Failed to load settings</p>
+            <p className="text-red-700">{t('settings.loadFailed')}</p>
             <button
               onClick={loadSettings}
               className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all"
             >
-              Retry
+              {t('settings.retry')}
             </button>
           </div>
         </div>
@@ -171,12 +168,12 @@ export default function Settings() {
     try {
       const res = await apiPost('/settings/test-print', {});
       if (res.success) {
-        setSuccess('Test print sent! Check your printer.');
+        setSuccess(t('settings.testPrintSuccess'));
       } else {
-        setError(`Print failed: ${res.error}`);
+        setError(`${t('settings.testPrintError')}: ${res.error}`);
       }
     } catch (err) {
-      setError('Test print failed');
+      setError(t('settings.testPrintError'));
     }
   };
 
@@ -185,9 +182,9 @@ export default function Settings() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="font-inter text-start">
-          <h1 className="text-3xl font-bold text-white font-inter">Settings</h1>
+          <h1 className="text-3xl font-bold text-white font-inter">{t('settings.title')}</h1>
           <p className="text-gray-500 text-sm font-inter">
-            Configure your store information and preferences
+            {t('settings.subtitle')}
           </p>
         </div>
         <button
@@ -196,27 +193,29 @@ export default function Settings() {
           className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <IonIcon icon={refreshOutline} className="text-xl" />
-          <span>Refresh</span>
+          <span>{t('settings.refresh')}</span>
         </button>
-
-
       </div>
+
+      {/* Auto Print Toggle */}
       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mt-2">
         <div className="text-start">
-          <p className="text-sm font-medium text-gray-700">Auto Print Bill</p>
-          <p className="text-xs text-gray-500">Automatically print bill after checkout</p>
+          <p className="text-sm font-medium text-gray-700">{t('settings.autoPrintBill')}</p>
+          <p className="text-xs text-gray-500">{t('settings.autoPrintDesc')}</p>
         </div>
         <button
           onClick={() => setData({ ...data, auto_print: data.auto_print ? 0 : 1 })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${data.auto_print ? 'bg-green-600' : 'bg-gray-300'
-            }`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            data.auto_print ? 'bg-green-600' : 'bg-gray-300'
+          }`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.auto_print ? 'translate-x-6' : 'translate-x-1'
-            }`} />
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            data.auto_print ? 'translate-x-6' : 'translate-x-1'
+          }`} />
         </button>
       </div>
 
-      {/* Printer Settings */}
+      {/* Printer Settings (commented - preserved as is) */}
       {/* <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
           <h2 className="text-white font-semibold text-lg">🖨️ Printer Settings</h2>
@@ -321,29 +320,29 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <IonIcon icon={businessOutline} className="text-white text-xl" />
                 <h2 className="text-white font-semibold text-lg">
-                  Store Information
+                  {t('settings.storeInformation')}
                 </h2>
               </div>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Shop Name *
+                  {t('settings.shopName')} *
                 </label>
                 <input
-                  placeholder="Enter your shop name"
+                  placeholder={t('settings.shopNamePlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   value={data.shop_name || ""}
                   onChange={(e) => setData({ ...data, shop_name: e.target.value })}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  This will appear on invoices and receipts
+                  {t('settings.shopNameHelp')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile Number
+                  {t('settings.mobileNumber')}
                 </label>
                 <input
                   placeholder="+91 98765 43210"
@@ -355,11 +354,11 @@ export default function Settings() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
+                  {t('settings.address')}
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Enter your store address"
+                  placeholder={t('settings.addressPlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   value={data.address || ""}
                   onChange={(e) => setData({ ...data, address: e.target.value })}
@@ -376,14 +375,14 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <IonIcon icon={documentTextOutline} className="text-white text-xl" />
                 <h2 className="text-white font-semibold text-lg">
-                  Tax & Invoice Settings
+                  {t('settings.taxInvoiceSettings')}
                 </h2>
               </div>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  GSTIN Number
+                  {t('settings.gstinNumber')}
                 </label>
                 <input
                   placeholder="22AAAAA0000A1Z"
@@ -392,13 +391,13 @@ export default function Settings() {
                   onChange={(e) => setData({ ...data, gstin: e.target.value.toUpperCase() })}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Goods and Services Tax Identification Number
+                  {t('settings.gstinHelp')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Invoice Prefix
+                  {t('settings.invoicePrefix')}
                 </label>
                 <input
                   placeholder="INV"
@@ -409,7 +408,7 @@ export default function Settings() {
                   }
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Prefix for invoice numbers (e.g., INV-001)
+                  {t('settings.invoicePrefixHelp')}
                 </p>
               </div>
 
@@ -417,9 +416,8 @@ export default function Settings() {
                 <div className="flex items-start gap-2 text-start">
                   <IonIcon icon={documentTextOutline} className="text-blue-500 text-lg mt-0.5" />
                   <div>
-                    {/* <p className="text-sm font-medium text-blue-800">Preview</p> */}
                     <p className="text-xs text-blue-600 mt-1">
-                      Example invoice number: {data.invoice_prefix || "INV"}-0001
+                      {t('settings.exampleInvoice')} {data.invoice_prefix || "INV"}-0001
                     </p>
                   </div>
                 </div>
@@ -436,7 +434,7 @@ export default function Settings() {
             <div className="flex items-center gap-2">
               <IonIcon icon={businessOutline} className="text-white text-xl" />
               <h2 className="text-white font-semibold text-lg">
-                Business Information
+                {t('settings.businessInformation')}
               </h2>
             </div>
           </div>
@@ -447,9 +445,9 @@ export default function Settings() {
                   <IonIcon icon={businessOutline} className="text-blue-600 text-lg" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Business Name</p>
+                  <p className="text-sm font-medium text-gray-800">{t('settings.businessName')}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {data.shop_name || "Not set"}
+                    {data.shop_name || t('settings.notSet')}
                   </p>
                 </div>
               </div>
@@ -459,9 +457,9 @@ export default function Settings() {
                   <IonIcon icon={callOutline} className="text-green-600 text-lg" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Contact Number</p>
+                  <p className="text-sm font-medium text-gray-800">{t('settings.contactNumber')}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {data.mobile || "Not set"}
+                    {data.mobile || t('settings.notSet')}
                   </p>
                 </div>
               </div>
@@ -471,9 +469,9 @@ export default function Settings() {
                   <IonIcon icon={locationOutline} className="text-purple-600 text-lg" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Address</p>
+                  <p className="text-sm font-medium text-gray-800">{t('settings.addressLabel')}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {data.address || "Not set"}
+                    {data.address || t('settings.notSet')}
                   </p>
                 </div>
               </div>
@@ -483,7 +481,7 @@ export default function Settings() {
                   <IonIcon icon={pricetagOutline} className="text-orange-600 text-lg" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">Invoice Prefix</p>
+                  <p className="text-sm font-medium text-gray-800">{t('settings.invoicePrefixLabel')}</p>
                   <p className="text-sm text-gray-600 mt-1">
                     {data.invoice_prefix || "INV"}
                   </p>
@@ -504,12 +502,12 @@ export default function Settings() {
           {saving ? (
             <span className="flex items-center justify-center gap-2">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Saving Settings...
+              {t('settings.savingSettings')}
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
               <IonIcon icon={saveOutline} className="text-xl" />
-              Save All Settings
+              {t('settings.saveAllSettings')}
             </span>
           )}
         </button>
@@ -521,7 +519,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <IonIcon icon={cloudUploadOutline} className="text-white text-xl" />
-              <h2 className="text-white font-semibold text-lg">Backup & Restore</h2>
+              <h2 className="text-white font-semibold text-lg">{t('settings.backupRestore')}</h2>
             </div>
             <button
               onClick={handleBackup}
@@ -529,16 +527,16 @@ export default function Settings() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50"
             >
               <IonIcon icon={cloudUploadOutline} />
-              {backupLoading ? 'Creating...' : 'Backup Now'}
+              {backupLoading ? t('settings.creatingBackup') : t('settings.backupNow')}
             </button>
           </div>
         </div>
         <div className="p-6">
           {backups.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-4">No backups yet. Click "Backup Now" to create one.</p>
+            <p className="text-gray-500 text-sm text-center py-4">{t('settings.noBackups')}</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700 mb-3">Available Backups (last 7):</p>
+              <p className="text-sm font-medium text-gray-700 mb-3">{t('settings.availableBackups')}</p>
               {backups.map((backup, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
@@ -553,7 +551,7 @@ export default function Settings() {
                     className="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
                   >
                     <IonIcon icon={cloudDownloadOutline} />
-                    Restore
+                    {t('settings.restore')}
                   </button>
                 </div>
               ))}
@@ -561,7 +559,7 @@ export default function Settings() {
           )}
           <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
             <p className="text-xs text-yellow-800">
-              ⚡ Auto-backup runs daily. Backups are stored at: <span className="font-mono">%APPDATA%\pos-app\backups\</span> on Windows.
+              ⚡ {t('settings.autoBackupNote')} <span className="font-mono">%APPDATA%\pos-app\backups\</span> {t('settings.onWindows')}
             </p>
           </div>
         </div>

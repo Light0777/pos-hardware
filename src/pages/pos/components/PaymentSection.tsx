@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentSectionProps {
   payments: Array<{ method: string; amount: number }>;
@@ -19,34 +20,41 @@ export default function PaymentSection({
   balance,
   grandTotal = 0,
 }: PaymentSectionProps) {
+  const { t } = useTranslation();
   const [selectedMethod, setSelectedMethod] = useState<string>("cash");
   const [amountGiven, setAmountGiven] = useState<number>(0);
+  const [hasManualInput, setHasManualInput] = useState(false);
 
   // Sync amount when grandTotal changes (auto-fill for cash/upi only)
   useEffect(() => {
-    console.log("🔄 useEffect triggered - grandTotal:", grandTotal, "selectedMethod:", selectedMethod);
-    // Only auto-fill for cash and upi, NOT for pay_later
-    if (grandTotal > 0 && selectedMethod !== "pay_later") {
-      console.log("🔄 Auto-filling amount for non-credit payment");
+    if (grandTotal > 0 && selectedMethod !== "pay_later" && !hasManualInput) {
       setAmountGiven(grandTotal);
       onPaymentChange(0, "amount", grandTotal);
     }
-  }, [grandTotal, selectedMethod, onPaymentChange]);
+  }, [grandTotal, selectedMethod]);
+
+  useEffect(() => {
+    setHasManualInput(false);
+    setAmountGiven(grandTotal > 0 ? grandTotal : 0);
+  }, [selectedMethod]);
+
+  useEffect(() => {
+    if (grandTotal === 0) {
+      setHasManualInput(false);
+      setAmountGiven(0);
+    }
+  }, [grandTotal]);
 
   const change = amountGiven - grandTotal;
 
-  // In PaymentSection.tsx, update handleMethodSelect:
   const handleMethodSelect = (method: string) => {
     console.log("🟢 Method selected in PaymentSection:", method);
     console.log("🟢 Current payments before change:", payments);
 
     setSelectedMethod(method);
-
-    // This should update the parent component's payments array
     onPaymentChange(0, "method", method);
     console.log("🟢 Called onPaymentChange with method:", method);
 
-    // When selecting "pay_later", set amount to grandTotal automatically
     if (method === "pay_later") {
       console.log("🟢 Setting pay_later amount to:", grandTotal);
       setAmountGiven(grandTotal);
@@ -56,19 +64,20 @@ export default function PaymentSection({
   };
 
   const handleAmountChange = (value: number) => {
+    setHasManualInput(true);
     setAmountGiven(value);
     onPaymentChange(0, "amount", value);
   };
 
-  // In PaymentSection.tsx, verify the methods array:
-const methods = [
-  { id: "cash", label: "Cash", activeBorder: "border-green-500", activeBg: "bg-green-500/10", activeText: "text-green-500" },
-  { id: "upi", label: "UPI", activeBorder: "border-purple-500", activeBg: "bg-purple-500/10", activeText: "text-purple-500" },
-  { id: "pay_later", label: "Pay Later", activeBorder: "border-orange-500", activeBg: "bg-orange-500/10", activeText: "text-orange-500" }, // ✅ Must be "pay_later"
-];
+  const methods = [
+    { id: "cash", label: t('pos.cash'), activeBorder: "border-green-500", activeBg: "bg-green-500/10", activeText: "text-green-500" },
+    { id: "upi", label: t('pos.upi'), activeBorder: "border-purple-500", activeBg: "bg-purple-500/10", activeText: "text-purple-500" },
+    { id: "pay_later", label: t('pos.payLater'), activeBorder: "border-orange-500", activeBg: "bg-orange-500/10", activeText: "text-orange-500" },
+  ];
+
   return (
     <div className="space-y-3">
-      <div className="font-medium text-sm text-gray-300">Payment Method</div>
+      <div className="font-medium text-sm text-gray-300">{t('pos.paymentMethod')}</div>
 
       {/* Method Selector */}
       <div className="grid grid-cols-3 gap-2">
@@ -82,8 +91,7 @@ const methods = [
               : "border-gray-700 bg-[#212121] hover:border-gray-600"
               }`}
           >
-            <span className={`text-sm font-medium ${selectedMethod === id ? activeText : "text-white"
-              }`}>
+            <span className={`text-sm font-medium ${selectedMethod === id ? activeText : "text-white"}`}>
               {label}
             </span>
           </button>
@@ -92,7 +100,7 @@ const methods = [
 
       {/* Bill Amount */}
       <div className="flex justify-between items-center bg-[#212121] rounded-xl px-3 py-2">
-        <span className="text-gray-400 text-sm">Bill Amount</span>
+        <span className="text-gray-400 text-sm">{t('pos.billAmount')}</span>
         <span className="text-white font-bold text-lg">₹{grandTotal.toLocaleString()}</span>
       </div>
 
@@ -100,23 +108,23 @@ const methods = [
       {selectedMethod !== "pay_later" && (
         <div>
           <label className="text-xs text-gray-400 mb-1 block">
-            {selectedMethod === "cash" ? "Cash Given by Customer" : "Amount Paid"}
+            {selectedMethod === "cash" ? t('pos.cashGiven') : t('pos.amountPaid')}
           </label>
           <div className="flex items-center gap-2 bg-[#212121] border border-gray-600 rounded-xl px-3 py-2 focus-within:border-green-500 transition-colors">
             <span className="text-gray-400 font-bold text-lg">₹</span>
             <input
               type="number"
-              className="flex-1 bg-transparent text-white text-xl font-bold outline-none"
+              className="flex-1 bg-transparent text-white text-xl font-bold outline-none min-w-0"  // min-w-0 prevents overflow
               value={amountGiven || ""}
               placeholder={grandTotal.toString()}
               onChange={(e) => handleAmountChange(Number(e.target.value))}
             />
             <button
               type="button"
-              className="text-xs text-green-500 border border-green-500/50 px-2 py-1 rounded-lg hover:bg-green-500/10 transition-colors whitespace-nowrap"
+              className="text-xs text-green-500 border border-green-500/50 px-2 py-1 rounded-lg hover:bg-green-500/10 transition-colors flex-shrink-0 whitespace-normal text-center leading-tight"
               onClick={() => handleAmountChange(grandTotal)}
             >
-              Exact
+              {t('pos.exact')}
             </button>
           </div>
         </div>
@@ -129,10 +137,10 @@ const methods = [
             <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-orange-400 text-sm font-medium">Pay Later</span>
+            <span className="text-orange-400 text-sm font-medium">{t('pos.payLater')}</span>
           </div>
           <p className="text-gray-400 text-xs mt-1">
-            This amount will be added to the customer's credit balance
+            {t('pos.payLaterDescription')}
           </p>
         </div>
       )}
@@ -144,7 +152,7 @@ const methods = [
           : "bg-red-500/10 border border-red-500/30"
           }`}>
           <span className={`text-sm font-medium ${change >= 0 ? "text-green-400" : "text-red-400"}`}>
-            {change >= 0 ? "Change to Return" : "⚠️ Amount Due"}
+            {change >= 0 ? t('pos.changeToReturn') : t('pos.amountDue')}
           </span>
           <span className={`text-xl font-bold ${change >= 0 ? "text-green-400" : "text-red-400"}`}>
             ₹{Math.abs(change).toLocaleString()}

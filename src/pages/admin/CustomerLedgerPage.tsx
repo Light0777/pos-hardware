@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getCustomerLedger,
   addCustomerPayment,
@@ -6,6 +7,7 @@ import {
 import CustomerStatement from "./CustomerStatement";
 
 export default function CustomerLedgerModal({ customer, onClose }: any) {
+  const { t } = useTranslation();
   const [ledger, setLedger] = useState<any[]>([]);
   const [amount, setAmount] = useState(0);
   const [method, setMethod] = useState("cash");
@@ -20,7 +22,7 @@ export default function CustomerLedgerModal({ customer, onClose }: any) {
   };
 
   const handlePayment = async () => {
-    if (!amount) return alert("Enter amount");
+    if (!amount) return alert(t('customerLedger.enterAmount'));
 
     await addCustomerPayment(customer.customer_uuid, {
       amount,
@@ -46,16 +48,15 @@ export default function CustomerLedgerModal({ customer, onClose }: any) {
 
   const sendWhatsApp = () => {
     if (!customer.mobile) {
-      return alert("Customer has no mobile number");
+      return alert(t('customerLedger.noMobileNumber'));
     }
 
-    const msg = `
-Customer: ${customer.name}
-Balance: ₹${customer.credit_balance}
+    const msg = `${t('customerLedger.whatsappMessage', { 
+      name: customer.name, 
+      balance: customer.credit_balance || 0 
+    })}
 
-Please clear your dues.
-
-- My Store
+- ${t('customerLedger.storeName')}
   `;
 
     const url = `https://wa.me/${customer.mobile}?text=${encodeURIComponent(msg)}`;
@@ -71,7 +72,7 @@ Please clear your dues.
           <div>
             <div className="font-bold text-lg">{customer.name}</div>
             <div className="text-xs text-gray-500">
-              Credit: ₹{customer.credit_balance || 0}
+              {t('customerLedger.creditLabel')}: ₹{customer.credit_balance || 0}
             </div>
           </div>
 
@@ -86,7 +87,7 @@ Please clear your dues.
             <input
               type="number"
               className="border p-2 w-full"
-              placeholder="Amount"
+              placeholder={t('customerLedger.amountPlaceholder')}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
             />
@@ -96,40 +97,40 @@ Please clear your dues.
               value={method}
               onChange={(e) => setMethod(e.target.value)}
             >
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="card">Card</option>
+              <option value="cash">{t('customerLedger.methodCash')}</option>
+              <option value="upi">{t('customerLedger.methodUPI')}</option>
+              <option value="card">{t('customerLedger.methodCard')}</option>
             </select>
 
             <button
               onClick={handlePayment}
               className="bg-green-600 text-white px-4"
             >
-              Pay
+              {t('customerLedger.payButton')}
             </button>
 
             <button
               onClick={handlePrint}
               className="bg-blue-600 text-white px-4"
             >
-              Print
+              {t('customerLedger.printButton')}
             </button>
 
             <button
               onClick={sendWhatsApp}
               className="bg-green-600 text-white px-4"
             >
-              WhatsApp
+              {t('customerLedger.whatsappButton')}
             </button>
           </div>
 
           {/* LEDGER */}
           <div className="bg-white rounded shadow">
             <div className="grid grid-cols-4 p-3 border-b font-semibold">
-              <span>Type</span>
-              <span>Amount</span>
-              <span>Note</span>
-              <span>Date</span>
+              <span>{t('customerLedger.tableType')}</span>
+              <span>{t('customerLedger.tableAmount')}</span>
+              <span>{t('customerLedger.tableNote')}</span>
+              <span>{t('customerLedger.tableDate')}</span>
             </div>
 
             {(ledger || []).map((l) => (
@@ -137,7 +138,7 @@ Please clear your dues.
                 key={l.id}
                 className="grid grid-cols-4 p-3 border-b text-sm"
               >
-                <span>{l.type}</span>
+                <span>{l.type === 'credit' ? t('customerLedger.creditType') : t('customerLedger.debitType')}</span>
                 <span>₹{l.amount}</span>
                 <span>{l.note}</span>
                 <span>

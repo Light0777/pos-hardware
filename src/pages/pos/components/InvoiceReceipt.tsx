@@ -1,6 +1,7 @@
 import { IonIcon } from '@ionic/react';
 import { printOutline, closeOutline } from 'ionicons/icons';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface InvoiceReceiptProps {
   invoice: any;
@@ -9,25 +10,16 @@ interface InvoiceReceiptProps {
 }
 
 export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceReceiptProps) {
-
-  // useEffect(() => {
-  //   if (autoPrint) {
-  //     // Small delay to let the receipt render first
-  //     const timer = setTimeout(() => {
-  //       window.print();
-  //     }, 500);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [autoPrint]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (autoPrint) {
       const timer = setTimeout(() => {
-        handlePrint(); // Use the same async function
+        handlePrint();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [autoPrint, invoice]); // Add invoice to dependencies
+  }, [autoPrint, invoice]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -48,14 +40,8 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
     }).format(num || 0);
   };
 
-  // const handlePrint = () => {
-  //   window.print();
-  // };
-
   const handlePrint = async () => {
-    // Try thermal printer first
     try {
-      // Your backend runs on port 3000
       const response = await fetch('http://localhost:3000/api/printing/print-receipt', {
         method: 'POST',
         headers: {
@@ -67,18 +53,14 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
       const result = await response.json();
 
       if (result.success && result.printed) {
-        // Success! Receipt sent to thermal printer
         console.log('✅ Printed to thermal printer');
-        // You can show a success toast/notification here
-        onClose(); // Close the receipt modal after successful print
+        onClose();
       } else if (result.useBrowserPrint || result.fallback) {
-        // Printer not available, fall back to browser print
         console.warn('⚠️ Thermal printer not available, using browser print:', result.message);
-        window.print(); // Fallback to browser print dialog
+        window.print();
       }
     } catch (error) {
       console.error('❌ Print error:', error);
-      // Fallback to browser print on network error
       window.print();
     }
   };
@@ -96,14 +78,14 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-lg"
         >
           <IonIcon icon={printOutline} />
-          Print
+          {t('receipt.print')}
         </button>
         <button
           onClick={onClose}
           className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 shadow-lg"
         >
           <IonIcon icon={closeOutline} />
-          Close
+          {t('common.close')}
         </button>
       </div>
 
@@ -112,7 +94,7 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
         id="receipt"
         className="bg-white print:shadow-none shadow-2xl"
         style={{
-          width: '302px', // 80mm in px — works for both 58mm and 80mm
+          width: '302px',
           fontFamily: "'Courier New', Courier, monospace",
           fontSize: '12px',
           padding: '12px 10px',
@@ -132,12 +114,12 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
           )}
           {invoice.shop?.mobile && (
             <div style={{ fontSize: '11px' }}>
-              Ph: {invoice.shop.mobile}
+              {t('receipt.phoneLabel')}: {invoice.shop.mobile}
             </div>
           )}
           {invoice.shop?.gstin && (
             <div style={{ fontSize: '11px', fontWeight: 'bold' }}>
-              GSTIN: {invoice.shop.gstin}
+              {t('receipt.gstinLabel')}: {invoice.shop.gstin}
             </div>
           )}
         </div>
@@ -147,22 +129,22 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
         {/* Invoice Info */}
         <div style={{ fontSize: '11px', margin: '6px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Invoice#:</span>
+            <span>{t('receipt.invoiceNo')}:</span>
             <span style={{ fontWeight: 'bold' }}>{invoice.invoice_number || 'N/A'}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Date:</span>
+            <span>{t('receipt.date')}:</span>
             <span>{formatDate(invoice.date || invoice.created_at || new Date().toISOString())}</span>
           </div>
           {invoice.customer?.name && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Customer:</span>
+              <span>{t('receipt.customer')}:</span>
               <span>{invoice.customer.name}</span>
             </div>
           )}
           {invoice.customer?.mobile && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Mobile:</span>
+              <span>{t('receipt.mobile')}:</span>
               <span>{invoice.customer.mobile}</span>
             </div>
           )}
@@ -172,17 +154,17 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
 
         {/* TAX INVOICE Label */}
         <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '13px', margin: '4px 0' }}>
-          TAX INVOICE
+          {t('receipt.taxInvoice')}
         </div>
 
         <div style={{ textAlign: 'center', fontSize: '11px' }}>{dashes}</div>
 
         {/* Items Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', margin: '4px 4px' }}>
-          <span >Item</span>
-          <span >Qty</span>
-          <span >Rate</span>
-          <span >Amt</span>
+          <span>{t('receipt.item')}</span>
+          <span>{t('receipt.qty')}</span>
+          <span>{t('receipt.rate')}</span>
+          <span>{t('receipt.amt')}</span>
         </div>
 
         <div style={{ textAlign: 'center', fontSize: '11px' }}>{dashes}</div>
@@ -198,8 +180,10 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
             </div>
             {(item.hsn_code || item.tax_percent > 0) && (
               <div style={{ fontSize: '10px', color: '#444', paddingLeft: '2px' }}>
-                {item.hsn_code && <span>HSN:{item.hsn_code} </span>}
-                {item.tax_percent > 0 && <span>GST:{item.tax_percent}% (C:{formatNumber(item.cgst)} S:{formatNumber(item.sgst)})</span>}
+                {item.hsn_code && <span>{t('receipt.hsn')}:{item.hsn_code} </span>}
+                {item.tax_percent > 0 && (
+                  <span>{t('receipt.gstShort')}:{item.tax_percent}% ({t('receipt.cgstShort')}:{formatNumber(item.cgst)} {t('receipt.sgstShort')}:{formatNumber(item.sgst)})</span>
+                )}
               </div>
             )}
           </div>
@@ -210,24 +194,24 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
         {/* Summary */}
         <div style={{ fontSize: '11px', margin: '6px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Subtotal:</span>
+            <span>{t('receipt.subtotal')}:</span>
             <span>Rs.{formatNumber(invoice.summary?.total || 0)}</span>
           </div>
           {(invoice.summary?.tax || 0) > 0 && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>CGST:</span>
+                <span>{t('receipt.cgst')}:</span>
                 <span>Rs.{formatNumber(invoice.summary?.cgst || invoice.summary?.tax / 2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>SGST:</span>
+                <span>{t('receipt.sgst')}:</span>
                 <span>Rs.{formatNumber(invoice.summary?.sgst || invoice.summary?.tax / 2)}</span>
               </div>
             </>
           )}
           {(invoice.discount || 0) > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Discount:</span>
+              <span>{t('receipt.discount')}:</span>
               <span>-Rs.{formatNumber(invoice.discount)}</span>
             </div>
           )}
@@ -237,7 +221,7 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
 
         {/* Grand Total */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px', margin: '6px 0' }}>
-          <span>TOTAL:</span>
+          <span>{t('receipt.total')}:</span>
           <span>Rs.{formatNumber(invoice.summary?.grand_total || 0)}</span>
         </div>
 
@@ -246,10 +230,10 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
         {/* Payments */}
         {(invoice.payments || []).length > 0 && (
           <div style={{ fontSize: '11px', margin: '6px 0' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>Payment:</div>
+            <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>{t('receipt.payment')}:</div>
             {(invoice.payments || []).map((payment: any, index: number) => (
               <div key={index} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ textTransform: 'capitalize' }}>{payment.method}:</span>
+                <span style={{ textTransform: 'capitalize' }}>{t(`receipt.paymentMethods.${payment.method}`)}:</span>
                 <span>Rs.{formatNumber(payment.amount)}</span>
               </div>
             ))}
@@ -260,10 +244,10 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
 
         {/* Footer */}
         <div style={{ textAlign: 'center', fontSize: '11px', margin: '8px 0 4px' }}>
-          <div style={{ fontWeight: 'bold' }}>** THANK YOU **</div>
-          <div style={{ marginTop: '2px' }}>Visit us again!</div>
+          <div style={{ fontWeight: 'bold' }}>{t('receipt.thankYou')}</div>
+          <div style={{ marginTop: '2px' }}>{t('receipt.visitAgain')}</div>
           <div style={{ marginTop: '4px', fontSize: '10px' }}>
-            Computer generated invoice
+            {t('receipt.computerGenerated')}
           </div>
         </div>
 

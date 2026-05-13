@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Product } from "../../../renderer/types/product";
 
 interface ProductGridProps {
@@ -38,6 +39,7 @@ const getStockColorClass = (product: Product): string | null => {
 };
 
 export default function ProductGrid({ products, loading, onAddItem }: ProductGridProps) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Filter products based on search term
@@ -72,7 +74,7 @@ export default function ProductGrid({ products, loading, onAddItem }: ProductGri
         <div className="relative">
           <input
             type="text"
-            placeholder="Search products by name, SKU, or barcode..."
+            placeholder={t('pos.searchProducts')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all font-inter"
@@ -89,7 +91,7 @@ export default function ProductGrid({ products, loading, onAddItem }: ProductGri
         </div>
         {searchTerm && (
           <div className="text-xs text-gray-500 mt-1.5 ml-1">
-            Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+            {t('pos.foundProducts', { count: filteredProducts.length })}
           </div>
         )}
       </div>
@@ -99,8 +101,8 @@ export default function ProductGrid({ products, loading, onAddItem }: ProductGri
         {filteredProducts.length === 0 ? (
           <div className="col-span-3 flex flex-col items-center justify-center py-12 text-gray-500">
             <div className="text-4xl mb-2">🔍</div>
-            <p className="text-sm">No products found</p>
-            <p className="text-xs mt-1">Try a different search term</p>
+            <p className="text-sm">{t('pos.noProductsFound')}</p>
+            <p className="text-xs mt-1">{t('pos.tryDifferentSearch')}</p>
           </div>
         ) : (
           filteredProducts.map((p, index) => {
@@ -147,12 +149,12 @@ export default function ProductGrid({ products, loading, onAddItem }: ProductGri
                   </div>
                   {p.stock !== undefined && p.stock < 10 && p.stock > 0 && (
                     <div className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full mt-1 inline-block">
-                      Only {p.stock} left
+                      {t('pos.onlyXLeft', { stock: p.stock })}
                     </div>
                   )}
                   {p.stock === 0 && (
                     <div className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded-full mt-1 inline-block">
-                      Out of Stock
+                      {t('pos.outOfStock')}
                     </div>
                   )}
                 </div>

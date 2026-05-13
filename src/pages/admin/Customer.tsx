@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getCustomers,
   createCustomer,
@@ -24,6 +25,7 @@ import {
 } from "ionicons/icons";
 
 export default function CustomerPage() {
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
@@ -63,13 +65,11 @@ export default function CustomerPage() {
     }
   }, []);
 
-  // Refresh when refreshKey changes
   useEffect(() => {
     loadAllCustomerData();
   }, [refreshKey, loadAllCustomerData]);
 
-  // Expose refresh function via window
- useEffect(() => {
+  useEffect(() => {
     const handleRefresh = () => {
       console.log("📢 Received refresh customer page event");
       setRefreshKey(prev => prev + 1);
@@ -82,7 +82,6 @@ export default function CustomerPage() {
     };
   }, []);
 
-  // Existing loadCustomers and loadInsights functions remain the same
   const loadCustomers = async () => {
     try {
       const data = await getCustomers();
@@ -128,59 +127,6 @@ export default function CustomerPage() {
     }
   };
 
-  // const loadCustomers = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const data = await getCustomers();
-  //     console.log("✅ Customers data loaded:", data);
-  //     setCustomers(Array.isArray(data) ? data : []);
-  //   } catch (e) {
-  //     console.error("Error loading customers:", e);
-  //     setCustomers([]);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const loadInsights = async () => {
-  //   try {
-  //     const [agingResponse, reminderResponse] = await Promise.all([
-  //       apiGet("/customers/aging"),
-  //       apiGet("/customers/reminders"),
-  //     ]);
-
-  //     console.log("📊 Aging Response:", agingResponse);
-  //     console.log("📊 Reminders Response:", reminderResponse);
-
-  //     // Extract data from responses
-  //     let agingData = [];
-  //     if (agingResponse.success && agingResponse.data) {
-  //       agingData = agingResponse.data;
-  //     } else if (agingResponse.data && Array.isArray(agingResponse.data)) {
-  //       agingData = agingResponse.data;
-  //     } else if (Array.isArray(agingResponse)) {
-  //       agingData = agingResponse;
-  //     }
-
-  //     let reminderData = [];
-  //     if (reminderResponse.success && reminderResponse.data) {
-  //       reminderData = reminderResponse.data;
-  //     } else if (reminderResponse.data && Array.isArray(reminderResponse.data)) {
-  //       reminderData = reminderResponse.data;
-  //     } else if (Array.isArray(reminderResponse)) {
-  //       reminderData = reminderResponse;
-  //     }
-
-  //     setAging(agingData);
-  //     setReminders(reminderData);
-  //   } catch (e) {
-  //     console.error("Insights error:", e);
-  //     setAging([]);
-  //     setReminders([]);
-  //   }
-  // };
-
-  // 🔁 RESET FORM
   const resetForm = () => {
     setEditing(null);
     setForm({
@@ -193,27 +139,25 @@ export default function CustomerPage() {
     setShowForm(false);
   };
 
-  // 💾 SAVE
   const handleSave = async () => {
-    if (!form.name) return alert("Name required");
+    if (!form.name) return alert(t('customers.nameRequired'));
 
     try {
       if (editing) {
         await updateCustomer(editing.customer_uuid, form);
-        alert("Customer updated successfully");
+        alert(t('customers.updateSuccess'));
       } else {
         await createCustomer(form);
-        alert("Customer created successfully");
+        alert(t('customers.createSuccess'));
       }
-      await loadCustomers(); // Reload the list
+      await loadCustomers();
       resetForm();
     } catch (e) {
       console.error(e);
-      alert("Save failed");
+      alert(t('customers.saveFailed'));
     }
   };
 
-  // ✏️ EDIT
   const handleEdit = (c: any) => {
     setEditing(c);
     setForm({
@@ -226,26 +170,23 @@ export default function CustomerPage() {
     setShowForm(true);
   };
 
-  // ❌ DELETE
   const handleDelete = async (uuid: string) => {
-    if (!confirm("Delete customer?")) return;
+    if (!confirm(t('customers.deleteConfirm'))) return;
     try {
       await deleteCustomer(uuid);
-      alert("Customer deleted successfully");
-      await loadCustomers(); // Reload the list
+      alert(t('customers.deleteSuccess'));
+      await loadCustomers();
     } catch (e) {
       console.error("Delete failed:", e);
-      alert("Delete failed");
+      alert(t('customers.deleteFailed'));
     }
   };
 
-  // Filter customers
   const filteredCustomers = customers.filter((c) =>
     c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.mobile?.includes(searchTerm)
   );
 
-  // Stats
   const totalCustomers = customers.length;
   const totalCredit = customers.reduce((sum, c) => {
     const credit = typeof c.credit_balance === 'number' ? c.credit_balance : Number(c.credit_balance) || 0;
@@ -266,7 +207,7 @@ export default function CustomerPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white">Loading customers...</p>
+          <p className="text-white">{t('customers.loading')}</p>
         </div>
       </div>
     );
@@ -277,8 +218,8 @@ export default function CustomerPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">Customers</h1>
-          <p className="text-gray-300 text-sm mt-1">Manage your customer relationships</p>
+          <h1 className="text-3xl font-bold text-white">{t('customers.title')}</h1>
+          <p className="text-gray-300 text-sm mt-1">{t('customers.subtitle')}</p>
         </div>
         <button
           onClick={() => {
@@ -288,7 +229,7 @@ export default function CustomerPage() {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <IonIcon icon={personAddOutline} className="text-xl" />
-          <span>Add Customer</span>
+          <span>{t('customers.addCustomer')}</span>
         </button>
       </div>
 
@@ -297,7 +238,7 @@ export default function CustomerPage() {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-blue-100 text-sm">Total Customers</p>
+              <p className="text-blue-100 text-sm">{t('customers.totalCustomers')}</p>
               <p className="text-3xl font-bold mt-1">{totalCustomers}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -309,7 +250,7 @@ export default function CustomerPage() {
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-purple-100 text-sm">Total Credit Outstanding</p>
+              <p className="text-purple-100 text-sm">{t('customers.totalCreditOutstanding')}</p>
               <p className="text-2xl font-bold mt-1">
                 ₹{totalCredit.toLocaleString()}
               </p>
@@ -323,7 +264,7 @@ export default function CustomerPage() {
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-orange-100 text-sm">Overdue Accounts</p>
+              <p className="text-orange-100 text-sm">{t('customers.overdueAccounts')}</p>
               <p className="text-3xl font-bold mt-1">{overdueCustomers}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -335,7 +276,7 @@ export default function CustomerPage() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-green-100 text-sm">Active Customers</p>
+              <p className="text-green-100 text-sm">{t('customers.activeCustomers')}</p>
               <p className="text-3xl font-bold mt-1">{activeCustomers}</p>
             </div>
             <div className="bg-white/20 p-2 rounded-lg">
@@ -349,7 +290,7 @@ export default function CustomerPage() {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search customers by name or mobile..."
+          placeholder={t('customers.searchPlaceholder')}
           className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -367,11 +308,11 @@ export default function CustomerPage() {
               <div className="p-2 bg-orange-100 rounded-lg">
                 <IonIcon icon={timeOutline} className="text-orange-600 text-lg" />
               </div>
-              <h2 className="font-semibold text-gray-800">Credit Aging</h2>
+              <h2 className="font-semibold text-gray-800">{t('customers.creditAging')}</h2>
             </div>
 
             {aging.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-6">No aging data</div>
+              <div className="text-sm text-gray-400 text-center py-6">{t('customers.noAgingData')}</div>
             ) : (
               <div className="space-y-4">
                 {aging.slice(0, 5).map((c, i) => (
@@ -407,13 +348,13 @@ export default function CustomerPage() {
               <div className="p-2 bg-red-100 rounded-lg">
                 <IonIcon icon={alertCircleOutline} className="text-red-600 text-lg" />
               </div>
-              <h2 className="font-semibold text-gray-800">Payment Reminders</h2>
+              <h2 className="font-semibold text-gray-800">{t('customers.paymentReminders')}</h2>
             </div>
 
             {reminders.length === 0 ? (
               <div className="text-sm text-green-600 text-center py-6 flex items-center justify-center gap-2">
                 <IonIcon icon={checkmarkCircleOutline} className="text-lg" />
-                No pending dues
+                {t('customers.noPendingDues')}
               </div>
             ) : (
               <div className="space-y-2">
@@ -421,7 +362,7 @@ export default function CustomerPage() {
                   <div key={i} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                     <div>
                       <div className="font-medium text-gray-800">{r.name}</div>
-                      <div className="text-xs text-red-500">{r.days} days overdue</div>
+                      <div className="text-xs text-red-500">{t('customers.daysOverdue', { days: r.days })}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-red-600">₹{r.due || 0}</div>
@@ -436,13 +377,15 @@ export default function CustomerPage() {
         {/* Customer List */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <h2 className="font-semibold text-gray-800">Customer List</h2>
-            <p className="text-xs text-gray-500 mt-1">{filteredCustomers.length} customers found</p>
+            <h2 className="font-semibold text-gray-800">{t('customers.customerList')}</h2>
+            <p className="text-xs text-gray-500 mt-1">
+              {t('customers.customersFound', { count: filteredCustomers.length })}
+            </p>
           </div>
           <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
             {filteredCustomers.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
-                {searchTerm ? "No customers match your search" : "No customers found"}
+                {searchTerm ? t('customers.noSearchResults') : t('customers.noCustomers')}
               </div>
             ) : (
               filteredCustomers.map((c) => {
@@ -472,7 +415,7 @@ export default function CustomerPage() {
                         {/* Credit Info */}
                         <div className="mt-3 ml-12">
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-gray-500">Credit Used</span>
+                            <span className="text-gray-500">{t('customers.creditUsed')}</span>
                             <span className={isOverdue ? "text-red-600 font-semibold" : "text-gray-700"}>
                               ₹{c.credit_balance || 0} / ₹{c.credit_limit || 0}
                             </span>
@@ -484,7 +427,7 @@ export default function CustomerPage() {
                             ></div>
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            Available: ₹{availableCredit.toLocaleString()}
+                            {t('customers.availableCredit')}: ₹{availableCredit.toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -493,21 +436,21 @@ export default function CustomerPage() {
                         <button
                           onClick={() => setSelectedCustomer(c)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="View Ledger"
+                          title={t('customers.viewLedger')}
                         >
                           <IonIcon icon={eyeOutline} className="text-lg" />
                         </button>
                         <button
                           onClick={() => handleEdit(c)}
                           className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                          title="Edit"
+                          title={t('customers.edit')}
                         >
                           <IonIcon icon={createOutline} className="text-lg" />
                         </button>
                         <button
                           onClick={() => handleDelete(c.customer_uuid)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
+                          title={t('customers.delete')}
                         >
                           <IonIcon icon={trashOutline} className="text-lg" />
                         </button>
@@ -527,7 +470,7 @@ export default function CustomerPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">
-                {editing ? "Edit Customer" : "Add New Customer"}
+                {editing ? t('customers.editCustomer') : t('customers.addNewCustomer')}
               </h2>
               <button onClick={resetForm} className="p-2 hover:bg-gray-100 rounded-full transition">
                 <IonIcon icon={closeOutline} className="text-xl text-gray-500" />
@@ -536,9 +479,9 @@ export default function CustomerPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.nameField')} *</label>
                 <input
-                  placeholder="Customer name"
+                  placeholder={t('customers.namePlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -546,9 +489,9 @@ export default function CustomerPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.mobileField')}</label>
                 <input
-                  placeholder="Mobile number"
+                  placeholder={t('customers.mobilePlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.mobile}
                   onChange={(e) => setForm({ ...form, mobile: e.target.value })}
@@ -556,9 +499,9 @@ export default function CustomerPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.addressField')}</label>
                 <textarea
-                  placeholder="Address"
+                  placeholder={t('customers.addressPlaceholder')}
                   rows={2}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.address}
@@ -567,9 +510,9 @@ export default function CustomerPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GSTIN</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.gstinField')}</label>
                 <input
-                  placeholder="GSTIN"
+                  placeholder={t('customers.gstinPlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.gstin}
                   onChange={(e) => setForm({ ...form, gstin: e.target.value })}
@@ -577,10 +520,10 @@ export default function CustomerPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Credit Limit</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.creditLimitField')}</label>
                 <input
                   type="number"
-                  placeholder="Credit limit"
+                  placeholder={t('customers.creditLimitPlaceholder')}
                   className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.credit_limit}
                   onChange={(e) => setForm({ ...form, credit_limit: Number(e.target.value) })}
@@ -592,13 +535,13 @@ export default function CustomerPage() {
                   onClick={handleSave}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition-all"
                 >
-                  {editing ? "Update Customer" : "Create Customer"}
+                  {editing ? t('customers.updateCustomer') : t('customers.createCustomer')}
                 </button>
                 <button
                   onClick={resetForm}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-semibold transition-all"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>

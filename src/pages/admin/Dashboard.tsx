@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { getDashboardReport } from "../../renderer/services/reportApi";
 import {
   LineChart,
@@ -28,6 +29,7 @@ import {
 } from "ionicons/icons";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profitTrend, setProfitTrend] = useState<any[]>([]);
@@ -35,12 +37,10 @@ export default function Dashboard() {
   const [customerSummary, setCustomerSummary] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Function to load all dashboard data
   const loadAllData = useCallback(async () => {
     console.log("🔄 Dashboard: Loading all data...");
     setLoading(true);
     try {
-      // Load dashboard report
       const report = await getDashboardReport();
       if (report) {
         console.log("📊 Dashboard report loaded:", report);
@@ -59,13 +59,11 @@ export default function Dashboard() {
         });
       }
 
-      // Load customer summary - THIS IS CRITICAL
       const summary = await getCustomerSummary();
       console.log("👥 Customer summary loaded:", summary);
       console.log("💰 Total credit value:", summary?.total_credit);
       setCustomerSummary(summary);
 
-      // Load sales trend
       const salesTrend = await getSalesTrend();
       if (salesTrend && Array.isArray(salesTrend)) {
         const formatted = salesTrend.map((d: any) => ({
@@ -78,7 +76,6 @@ export default function Dashboard() {
         setTrend(formatted);
       }
 
-      // Load profit trend
       const profitData = await getProfitTrend();
       if (profitData && Array.isArray(profitData)) {
         const formatted = profitData.map((d: any) => ({
@@ -92,7 +89,6 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Dashboard data error:', err);
-      // Set default values on error
       setData({
         today_sales: 0,
         month_sales: 0,
@@ -109,12 +105,10 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Initial load and refresh when trigger changes
   useEffect(() => {
     loadAllData();
   }, [refreshTrigger, loadAllData]);
 
-  // Listen for refresh events
   useEffect(() => {
     const handleRefresh = () => {
       console.log("📢 Received refresh-dashboard event, refreshing...");
@@ -129,7 +123,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Helper function to format numbers
   const formatCompactNumber = (num: number): string => {
     if (num === null || num === undefined) return "0";
     const absNum = Math.abs(num);
@@ -144,10 +137,9 @@ export default function Dashboard() {
     }
   };
 
-  // Helper function to get subtitle based on value
   const getSubtitle = (value: number, type: string): string => {
     if (type === 'orders') {
-      return `${value} orders processed`;
+      return t('dashboard.ordersProcessed', { count: value });
     }
     if (value >= 10000000) {
       return `₹${(value / 10000000).toFixed(2)} Crores`;
@@ -166,10 +158,9 @@ export default function Dashboard() {
   );
 
   if (!data) return (
-    <div className="text-red-500 text-center p-8">Failed to load data</div>
+    <div className="text-red-500 text-center p-8">{t('dashboard.failedToLoad')}</div>
   );
 
-  // KPI Card Component
   const getGradient = (color: string) => {
     const gradients: Record<string, string> = {
       'text-green-600': 'from-green-500 to-green-600',
@@ -201,7 +192,6 @@ export default function Dashboard() {
     </div>
   );
 
-  // Get the current credit total (with fallback)
   const currentTotalCredit = customerSummary?.total_credit ?? 0;
   const currentCustomersWithCredit = customerSummary?.customers_with_credit ?? 0;
   const currentTopDebtors = customerSummary?.top_debtors ?? [];
@@ -210,7 +200,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-3 p-4 min-h-screen">
-      {/* Header with Refresh Button */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
@@ -222,7 +212,7 @@ export default function Dashboard() {
             </svg>
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-white font-inter">Dashboard</h1>
+            <h1 className="text-4xl font-bold text-white font-inter">{t('dashboard.title')}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -235,7 +225,7 @@ export default function Dashboard() {
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <KPICard
-          title="Today's Sales"
+          title={t('dashboard.todaySales')}
           value={data.today_sales || 0}
           compactValue={formatCompactNumber(data.today_sales || 0)}
           icon={cashOutline}
@@ -244,7 +234,7 @@ export default function Dashboard() {
         />
 
         <KPICard
-          title="Monthly Sales"
+          title={t('dashboard.monthlySales')}
           value={data.month_sales || 0}
           compactValue={formatCompactNumber(data.month_sales || 0)}
           icon={trendingUpOutline}
@@ -253,7 +243,7 @@ export default function Dashboard() {
         />
 
         <KPICard
-          title="Total Sales"
+          title={t('dashboard.totalSales')}
           value={data.total_sales || 0}
           compactValue={formatCompactNumber(data.total_sales || 0)}
           icon={cartOutline}
@@ -262,12 +252,12 @@ export default function Dashboard() {
         />
 
         <KPICard
-          title="Total Orders"
+          title={t('dashboard.totalOrders')}
           value={data.total_orders || 0}
           compactValue={data.total_orders?.toLocaleString() || "0"}
           icon={cubeOutline}
           color="text-orange-600"
-          subtitle={`${data.total_orders || 0} orders processed`}
+          subtitle={t('dashboard.ordersProcessed', { count: data.total_orders || 0 })}
           isMonetary={false}
         />
       </div>
@@ -279,15 +269,15 @@ export default function Dashboard() {
           <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white text-start hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <p className="text-red-100 text-sm font-medium">Total Credit Given</p>
+                <p className="text-red-100 text-sm font-medium">{t('dashboard.creditGiven')}</p>
                 <div className="flex items-baseline gap-1 mt-2">
                   <span className="text-xs text-red-200">₹</span>
                   <p className="text-4xl font-bold">
-                    {currentTotalCredit}  {/* 👈 raw number, no formatting */}
+                    {currentTotalCredit}
                   </p>
                 </div>
                 <p className="text-red-100 text-sm mt-2">
-                  {currentCustomersWithCredit} customers have outstanding dues
+                  {t('dashboard.customersWithDues', { count: currentCustomersWithCredit })}
                 </p>
               </div>
               <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
@@ -302,7 +292,7 @@ export default function Dashboard() {
               <div className="p-1 bg-red-100 rounded-lg">
                 <IonIcon icon={warningOutline} className="text-red-500 text-lg" />
               </div>
-              Top Debtors
+              {t('dashboard.topDebtors')}
             </h3>
             <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-hide">
               {currentTopDebtors.length > 0 ? (
@@ -326,8 +316,8 @@ export default function Dashboard() {
               ) : (
                 <div className="text-gray-400 text-center py-8 flex flex-col items-center gap-2">
                   <IonIcon icon={checkmarkCircleOutline} className="text-4xl text-green-500" />
-                  <p>No debtors found</p>
-                  <p className="text-xs">All customers have cleared their dues</p>
+                  <p>{t('dashboard.noDebtors')}</p>
+                  <p className="text-xs">{t('dashboard.allClear')}</p>
                 </div>
               )}
             </div>
@@ -339,21 +329,21 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 h-full">
             <div className="flex justify-between items-center mb-6">
               <div className="font-inter text-start">
-                <h2 className="font-semibold text-gray-800 text-lg">Profit Analysis</h2>
-                <p className="text-xs text-gray-400 mt-1">Last 7 days performance</p>
+                <h2 className="font-semibold text-gray-800 text-lg">{t('dashboard.profitAnalysis')}</h2>
+                <p className="text-xs text-gray-400 mt-1">{t('dashboard.last7Days')}</p>
               </div>
               <div className="flex gap-2">
                 <div className="px-3 py-1 bg-green-100 text-green-600 text-xs rounded-full flex items-center gap-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Revenue
+                  {t('dashboard.revenue')}
                 </div>
                 <div className="px-3 py-1 bg-red-100 text-red-600 text-xs rounded-full flex items-center gap-1">
                   <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  Cost
+                  {t('dashboard.cost')}
                 </div>
                 <div className="px-3 py-1 bg-purple-100 text-purple-600 text-xs rounded-full flex items-center gap-1">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Profit
+                  {t('dashboard.profit')}
                 </div>
               </div>
             </div>
@@ -374,7 +364,7 @@ export default function Dashboard() {
                     }}
                     formatter={(value: any, name: any) => [
                       `₹${Number(value).toLocaleString()}`,
-                      String(name).charAt(0).toUpperCase() + String(name).slice(1)
+                      name === 'revenue' ? t('dashboard.revenue') : name === 'cost' ? t('dashboard.cost') : t('dashboard.profit')
                     ]}
                     labelFormatter={(label) => ` ${label}`}
                   />
@@ -389,13 +379,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Rest of your charts - keep the same as before */}
+      {/* Sales Trend and Low Stock */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Sales Trend Chart */}
         <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold text-gray-800">Sales Trend</h2>
-            <div className="px-3 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">Last 7 Days</div>
+            <h2 className="font-semibold text-gray-800">{t('dashboard.salesTrend')}</h2>
+            <div className="px-3 py-1 bg-green-100 text-green-600 text-xs rounded-full font-medium">{t('dashboard.last7Days')}</div>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -410,7 +400,7 @@ export default function Dashboard() {
                     boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
                     padding: '12px'
                   }}
-                  formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Sales']}
+                  formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, t('dashboard.sales')]}
                   labelFormatter={(label) => ` ${label}`}
                 />
                 <Bar dataKey="total" fill="#3b82f6" radius={[8, 8, 0, 0]} barSize={40} />
@@ -426,25 +416,25 @@ export default function Dashboard() {
               <div className="p-1 bg-orange-100 rounded-lg">
                 <IonIcon icon={warningOutline} className="text-orange-500 text-lg" />
               </div>
-              Low Stock Alert
+              {t('dashboard.lowStock')}
             </h2>
-            <span className="text-xs text-orange-500 font-medium bg-orange-50 px-2 py-1 rounded-full">⚠️ Needs attention</span>
+            <span className="text-xs text-orange-500 font-medium bg-orange-50 px-2 py-1 rounded-full">⚠️ {t('dashboard.needsAttention')}</span>
           </div>
           <div className="space-y-2">
             {data.low_stock?.length === 0 ? (
               <div className="text-green-500 text-center py-8 flex items-center justify-center gap-2">
                 <IonIcon icon={checkmarkCircleOutline} className="text-xl" />
-                All stock levels are good
+                {t('dashboard.allStockGood')}
               </div>
             ) : (
               data.low_stock?.slice(0, 5).map((p: any) => (
                 <div key={p.product_uuid} className="flex justify-between items-center py-3 border-b border-gray-100 hover:bg-gray-50 px-2 rounded-lg transition-all">
                   <div>
                     <p className="font-medium text-gray-800">{p.name}</p>
-                    <p className="text-xs text-gray-400">ID: {p.product_uuid?.slice(0, 8)}</p>
+                    <p className="text-xs text-gray-400">{t('dashboard.idLabel')}: {p.product_uuid?.slice(0, 8)}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-red-600 font-semibold text-lg">{p.stock} left</span>
+                    <span className="text-red-600 font-semibold text-lg">{p.stock} {t('dashboard.leftLabel')}</span>
                     <div className="w-24 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                       <div className="h-full bg-red-500 rounded-full transition-all duration-500" style={{ width: `${Math.min((p.stock / 20) * 100, 100)}%` }}></div>
                     </div>
@@ -456,7 +446,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom Grid - Recent Sales & Purchases */}
+      {/* Recent Sales & Purchases */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Recent Sales */}
         <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
@@ -465,13 +455,13 @@ export default function Dashboard() {
               <div className="p-1 bg-blue-100 rounded-lg">
                 <IonIcon icon={cartOutline} className="text-blue-500 text-lg" />
               </div>
-              Recent Sales
+              {t('dashboard.recentSales')}
             </h2>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Last 5 transactions</span>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{t('dashboard.last5')}</span>
           </div>
           <div className="space-y-2">
             {data.recent_sales?.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">No recent sales</div>
+              <div className="text-gray-400 text-center py-8">{t('dashboard.noRecentSales')}</div>
             ) : (
               data.recent_sales?.slice(0, 5).map((s: any) => (
                 <div key={s.sale_uuid} className="flex justify-between items-center py-3 border-b border-gray-100 hover:bg-gray-50 px-3 rounded-lg transition-all duration-200 hover:translate-x-1">
@@ -496,18 +486,18 @@ export default function Dashboard() {
               <div className="p-1 bg-purple-100 rounded-lg">
                 <IonIcon icon={cubeOutline} className="text-purple-500 text-lg" />
               </div>
-              Recent Purchases
+              {t('dashboard.recentPurchases')}
             </h2>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Last 5 purchases</span>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{t('dashboard.last5')}</span>
           </div>
           <div className="space-y-2">
             {data.recent_purchases?.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">No purchases recorded</div>
+              <div className="text-gray-400 text-center py-8">{t('dashboard.noRecentPurchases')}</div>
             ) : (
               data.recent_purchases?.slice(0, 5).map((p: any) => (
                 <div key={p.purchase_uuid} className="flex justify-between items-center py-3 border-b border-gray-100 hover:bg-gray-50 px-3 rounded-lg transition-all duration-200 hover:translate-x-1">
                   <div>
-                    <p className="font-medium text-gray-800">{p.supplier?.name || "Supplier"}</p>
+                    <p className="font-medium text-gray-800">{p.supplier?.name || t('dashboard.supplier')}</p>
                     <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
                       <IonIcon icon={timeOutline} className="text-xs" />
                       {new Date(p.created_at).toLocaleDateString()}

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface DiscountSectionProps {
   discount: number;
   onDiscountChange: (value: number) => void;
@@ -9,10 +11,12 @@ export default function DiscountSection({
   onDiscountChange,
   onApplyDiscount,
 }: DiscountSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-[#212121] rounded-xl p-3 border border-gray-700">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-medium text-gray-300">Apply Discount</span>
+        <span className="text-sm font-medium text-gray-300">{t('pos.applyDiscount')}</span>
       </div>
       
       <div className="flex gap-2">
@@ -30,7 +34,7 @@ export default function DiscountSection({
           className="bg-green-500 font-bold text-white hover:text-green-500 px-4 py-2 rounded-lg hover:bg-[#141414] transition text-sm"
           onClick={onApplyDiscount}
         >
-          Apply
+          {t('pos.apply')}
         </button>
       </div>
     </div>

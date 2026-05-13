@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getProfile, type UserProfile, type ShopProfile } from "../../renderer/services/profileApi";
 import { useAuth } from "../../context/AuthContext";
 import { IonIcon } from "@ionic/react";
@@ -17,6 +18,7 @@ import {
 } from "ionicons/icons";
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tenant, setTenant] = useState<ShopProfile | null>(null);
@@ -32,8 +34,6 @@ export default function Profile() {
     setError(null);
     try {
       const response = await getProfile();
-
-      // Access the data correctly
       const userData = response.data.user;
       const tenantData = response.data.tenant;
 
@@ -45,7 +45,6 @@ export default function Profile() {
     } catch (err) {
       console.error("Profile load error:", err);
 
-      // Fallback to auth context user
       if (authUser) {
         setUser(authUser as UserProfile);
         setTenant({
@@ -55,7 +54,7 @@ export default function Profile() {
           expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         });
       } else {
-        setError("Failed to load profile data");
+        setError(t('profile.loadError'));
       }
     } finally {
       setLoading(false);
@@ -67,7 +66,7 @@ export default function Profile() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading profile...</p>
+          <p className="text-gray-500">{t('profile.loading')}</p>
         </div>
       </div>
     );
@@ -84,7 +83,7 @@ export default function Profile() {
               onClick={loadProfile}
               className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
             >
-              Try Again
+              {t('profile.tryAgain')}
             </button>
           </div>
         </div>
@@ -113,15 +112,15 @@ export default function Profile() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="font-inter text-start">
-          <h1 className="text-3xl font-bold text-white font-inter">Profile</h1>
+          <h1 className="text-3xl font-bold text-white font-inter">{t('profile.title')}</h1>
           <p className="text-gray-500 text-sm font-inter">
-            Manage your account and subscription details
+            {t('profile.subtitle')}
           </p>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl px-4 py-2 text-white">
           <div className="flex items-center gap-2">
             <IonIcon icon={personOutline} className="text-xl" />
-            <span className="font-semibold capitalize">{user?.role || "User"}</span>
+            <span className="font-semibold capitalize">{t(`profile.roles.${user?.role || "user"}`)}</span>
           </div>
         </div>
       </div>
@@ -133,7 +132,7 @@ export default function Profile() {
           <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
             <div className="flex items-center gap-2">
               <IonIcon icon={personOutline} className="text-white text-xl" />
-              <h2 className="text-white font-semibold text-lg">User Information</h2>
+              <h2 className="text-white font-semibold text-lg">{t('profile.userInformation')}</h2>
             </div>
           </div>
           <div className="p-6">
@@ -142,8 +141,8 @@ export default function Profile() {
                 {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">{user?.name || "User"}</h3>
-                <p className="text-gray-500 text-sm capitalize">{user?.role || "User"}</p>
+                <h3 className="text-xl font-bold text-gray-800">{user?.name || t('profile.user')}</h3>
+                <p className="text-gray-500 text-sm capitalize">{t(`profile.roles.${user?.role || "user"}`)}</p>
               </div>
             </div>
 
@@ -151,7 +150,7 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={personOutline} className="text-green-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Full Name</p>
+                  <p className="text-xs text-gray-500">{t('profile.fullName')}</p>
                   <p className="text-sm font-medium text-gray-800">{user?.name || "N/A"}</p>
                 </div>
               </div>
@@ -159,7 +158,7 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={mailOutline} className="text-green-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Email Address</p>
+                  <p className="text-xs text-gray-500">{t('profile.emailAddress')}</p>
                   <p className="text-sm font-medium text-gray-800">{user?.email || "N/A"}</p>
                 </div>
               </div>
@@ -167,14 +166,15 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={keyOutline} className="text-green-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Role</p>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${user?.role === "owner"
+                  <p className="text-xs text-gray-500">{t('profile.roleLabel')}</p>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
+                    user?.role === "owner"
                       ? "bg-purple-100 text-purple-700"
                       : user?.role === "manager"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-green-100 text-green-700"
                     }`}>
-                    {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || "User"}
+                    {t(`profile.roles.${user?.role || "user"}`)}
                   </span>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function Profile() {
               {user?.user_uuid && (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500">User ID</p>
+                    <p className="text-xs text-gray-500">{t('profile.userId')}</p>
                     <p className="text-xs font-mono text-gray-600">{user.user_uuid}</p>
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export default function Profile() {
           <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
             <div className="flex items-center gap-2">
               <IonIcon icon={businessOutline} className="text-white text-xl" />
-              <h2 className="text-white font-semibold text-lg">Shop Information</h2>
+              <h2 className="text-white font-semibold text-lg">{t('profile.shopInformation')}</h2>
             </div>
           </div>
           <div className="p-6">
@@ -204,7 +204,7 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={businessOutline} className="text-purple-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Shop Name</p>
+                  <p className="text-xs text-gray-500">{t('profile.shopName')}</p>
                   <p className="text-sm font-medium text-gray-800">{tenant?.shop_name || "N/A"}</p>
                 </div>
               </div>
@@ -212,7 +212,7 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={cardOutline} className="text-purple-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Invoice Prefix</p>
+                  <p className="text-xs text-gray-500">{t('profile.invoicePrefix')}</p>
                   <p className="text-sm font-medium text-gray-800">{tenant?.invoice_prefix || "INV"}</p>
                 </div>
               </div>
@@ -220,24 +220,28 @@ export default function Profile() {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <IonIcon icon={checkmarkCircleOutline} className="text-purple-500 text-lg" />
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Status</p>
-                  <span className={`inline-flex items-center gap-1 text-sm font-medium ${tenant?.is_active ? "text-green-600" : "text-red-600"
-                    }`}>
+                  <p className="text-xs text-gray-500">{t('profile.status')}</p>
+                  <span className={`inline-flex items-center gap-1 text-sm font-medium ${
+                    tenant?.is_active ? "text-green-600" : "text-red-600"
+                  }`}>
                     <IonIcon icon={tenant?.is_active ? checkmarkCircleOutline : closeOutline} className="text-sm" />
-                    {tenant?.is_active ? "Active" : "Inactive"}
+                    {tenant?.is_active ? t('profile.active') : t('profile.inactive')}
                   </span>
                 </div>
               </div>
 
               {tenant?.expiry_date && (
-                <div className={`flex items-center gap-3 p-3 rounded-lg ${isExpiringSoon && tenant?.is_active ? "bg-orange-50" : "bg-green-50"
-                  }`}>
-                  <IonIcon icon={calendarOutline} className={`text-lg ${isExpiringSoon && tenant?.is_active ? "text-orange-500" : "text-green-500"
-                    }`} />
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                  isExpiringSoon && tenant?.is_active ? "bg-orange-50" : "bg-green-50"
+                }`}>
+                  <IonIcon icon={calendarOutline} className={`text-lg ${
+                    isExpiringSoon && tenant?.is_active ? "text-orange-500" : "text-green-500"
+                  }`} />
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500">Subscription Expiry</p>
-                    <p className={`text-sm font-bold ${isExpiringSoon && tenant?.is_active ? "text-orange-600" : "text-green-600"
-                      }`}>
+                    <p className="text-xs text-gray-500">{t('profile.subscriptionExpiry')}</p>
+                    <p className={`text-sm font-bold ${
+                      isExpiringSoon && tenant?.is_active ? "text-orange-600" : "text-green-600"
+                    }`}>
                       {new Date(tenant.expiry_date).toLocaleDateString('en-IN', {
                         day: 'numeric',
                         month: 'long',
@@ -246,7 +250,7 @@ export default function Profile() {
                     </p>
                     {tenant.is_active && (
                       <p className="text-xs mt-1">
-                        {daysRemaining} days remaining
+                        {t('profile.daysRemaining', { days: daysRemaining })}
                       </p>
                     )}
                   </div>
