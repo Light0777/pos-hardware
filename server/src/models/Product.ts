@@ -22,48 +22,46 @@ export class ProductModel {
     return this.findById(uuid)!;
   }
 
+  static initSoftDelete() {
+    db.exec(`
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS is_deleted INTEGER DEFAULT 0
+  `);
+  }
+
   // Find product by UUID
   static findById(uuid: string): Product | undefined {
-    const stmt = db.prepare('SELECT * FROM products WHERE product_uuid = ?');
+    const stmt = db.prepare('SELECT * FROM products WHERE product_uuid = ? AND is_deleted = 0');
     return stmt.get(uuid) as Product | undefined;
   }
 
   // Find product by barcode
   static findByBarcode(barcode: string): Product | undefined {
-    const stmt = db.prepare('SELECT * FROM products WHERE barcode = ?');
+    const stmt = db.prepare('SELECT * FROM products WHERE barcode = ? AND is_deleted = 0');
     return stmt.get(barcode) as Product | undefined;
   }
-
   // Find product by SKU
   static findBySku(sku: string): Product | undefined {
-    const stmt = db.prepare('SELECT * FROM products WHERE sku = ?');
+    const stmt = db.prepare('SELECT * FROM products WHERE sku = ? AND is_deleted = 0');
     return stmt.get(sku) as Product | undefined;
   }
 
   // List all products (paginated)
   static findAll(page: number = 1, limit: number = 20): { products: Product[], total: number } {
     const offset = (page - 1) * limit;
-
     const products = db.prepare(
-      'SELECT * FROM products ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      'SELECT * FROM products WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT ? OFFSET ?'
     ).all(limit, offset) as Product[];
-
-    const total = (db.prepare('SELECT COUNT(*) as count FROM products').get() as any).count;
-
+    const total = (db.prepare('SELECT COUNT(*) as count FROM products WHERE is_deleted = 0').get() as any).count;
     return { products, total };
   }
 
   // Search products by name
   static search(query: string, limit: number = 20): Product[] {
-    const stmt = db.prepare(`
-      SELECT * FROM products 
-      WHERE name LIKE ? 
-      ORDER BY name ASC 
-      LIMIT ?
-    `);
-
-    return stmt.all(`%${query}%`, limit) as Product[];
+    return db.prepare(`
+    SELECT * FROM products WHERE name LIKE ? AND is_deleted = 0 ORDER BY name ASC LIMIT ?
+  `).all(`%${query}%`, limit) as Product[];
   }
+
 
   // Advanced search with multiple criteria
   static advancedSearch(params: {
@@ -164,7 +162,10 @@ export class ProductModel {
 
   // Delete product
   static delete(uuid: string): boolean {
-    const stmt = db.prepare('DELETE FROM products WHERE product_uuid = ?');
+    const stmt = db.prepare(`
+    UPDATE products SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP 
+    WHERE product_uuid = ?
+  `);
     const result = stmt.run(uuid);
     return result.changes > 0;
   }
@@ -198,13 +199,14 @@ export class ProductModel {
 
   // Get low stock products
   static getLowStock(threshold: number = 10): Product[] {
-    const stmt = db.prepare('SELECT * FROM products WHERE stock <= ? ORDER BY stock ASC');
-    return stmt.all(threshold) as Product[];
+    return db.prepare(
+      'SELECT * FROM products WHERE stock <= ? AND is_deleted = 0 ORDER BY stock ASC'
+    ).all(threshold) as Product[];
   }
+
 
   // Get product count
   static count(): number {
-    const result = db.prepare('SELECT COUNT(*) as count FROM products').get() as any;
-    return result.count;
+    return (db.prepare('SELECT COUNT(*) as count FROM products WHERE is_deleted = 0').get() as any).count;
   }
 }
