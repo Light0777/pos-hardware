@@ -29,10 +29,10 @@
     "appId": "com.pos.app",
     "productName": "Instant Bill",
     "win": {
-      "icon": "electron/assets/icon.ico"
+      "icon": "assets/icon.ico"
     },
     "linux": {
-      "icon": "electron/assets/icon.png",
+      "icon": "assets/icon.png",
       "target": [
         "AppImage"
       ]
