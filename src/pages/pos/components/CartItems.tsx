@@ -48,7 +48,7 @@ export default function CartItems({ items, onIncrease, onDecrease, onRemove }: C
           <div className="flex justify-between items-start mb-2">
             <div className="flex-1">
               <h3 className="text-white font-medium text-sm truncate">
-                {item.product?.name || t('pos.unknownProduct')}
+                {(item.product?.name || t('pos.unknownProduct')).replace('[Custom] ', '')}
               </h3>
               {item.product?.barcode && (
                 <p className="text-gray-500 text-xs">#{item.product.barcode}</p>

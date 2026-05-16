@@ -42,3 +42,13 @@ export async function deleteProduct(uuid: string) {
   const response = await apiDelete(`/products/${uuid}`);
   return response.data || response;
 }
+
+export async function previewMigration(fileContent: string, fileType: string) {
+  const response = await apiPost('/migration/preview', { fileContent, fileType });
+  return response.data || response;
+}
+
+export async function confirmMigration(products: any[], onDuplicate: 'skip' | 'overwrite') {
+  const response = await apiPost('/migration/confirm', { products, onDuplicate });
+  return response.data || response;
+}

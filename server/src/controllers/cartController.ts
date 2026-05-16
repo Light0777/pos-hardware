@@ -4,6 +4,52 @@ import { ProductModel } from '../models/Product';
 import type { AuthRequest } from '../middleware/auth';
 
 export class CartController {
+  static addCustomItem = (req: Request, res: Response): void => {
+  try {
+    const cartUuid = String(req.params.cart_uuid);
+    const { name, price, gst_percent, quantity } = req.body;
+
+    if (!name || !price) {
+      res.status(400).json({ success: false, error: 'Name and price are required' });
+      return;
+    }
+
+    const cart = CartModel.findById(cartUuid);
+    if (!cart) {
+      res.status(404).json({ success: false, error: 'Cart not found' });
+      return;
+    }
+
+    if (cart.status !== 'active') {
+      res.status(400).json({ success: false, error: 'Cart is not active' });
+      return;
+    }
+
+    // Create a temporary product in the DB so cart_items FK constraint is satisfied
+    const tempProduct = ProductModel.create({
+      name: String(name),
+      price: parseFloat(String(price)),
+      gst_percent: parseFloat(String(gst_percent)) || 0,
+      stock: 999,
+      // sku: null,
+      // barcode: null,
+    });
+
+    // Add it to cart normally
+    const item = CartModel.addItem(
+      cartUuid,
+      tempProduct.product_uuid,
+      parseInt(String(quantity)) || 1,
+      tempProduct.price,
+      tempProduct.gst_percent
+    );
+
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    console.error('Add custom item error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
   // Create new cart
   static create = (req: AuthRequest, res: Response): void => {
     try {

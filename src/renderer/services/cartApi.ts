@@ -47,3 +47,7 @@ export async function applyDiscount(cart_uuid: string, discount: number) {
     discount,
   });
 }
+
+export async function addCustomItem(cart_uuid: string, item: { name: string, price: number, gst_percent: number, quantity: number }) {
+  return await apiPost(`/carts/${cart_uuid}/custom-item`, item);
+}

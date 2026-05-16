@@ -18,6 +18,7 @@ import purchaseRoutes from './routes/purchases';
 import supplierRoutes from './routes/suppliers';
 import reportRoutes from './routes/reports';
 import staffRoutes from './routes/staff';
+import migrationRouter from './routes/migration';
 
 import { LicenseService } from './services/licenseService';
 
@@ -73,7 +74,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/printing', printingRoutes);
-
+app.use('/api/migration', migrationRouter);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

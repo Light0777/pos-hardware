@@ -11,7 +11,9 @@ import {
   cubeOutline,
   checkmarkCircleOutline,
   warningOutline,
+  cloudUploadOutline,
 } from "ionicons/icons";
+import ImportProductsModal from "../../components/ImportProductsModal";
 
 export default function Products() {
   const { t } = useTranslation();
@@ -21,6 +23,8 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -34,8 +38,8 @@ export default function Products() {
     image: "",
   });
 
-  const loadProducts = async () => {
-    setLoading(true);
+  const loadProducts = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await getProducts();
@@ -45,7 +49,7 @@ export default function Products() {
       setError(t('products.loadError'));
       setProducts([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -118,15 +122,14 @@ export default function Products() {
 
   const handleDelete = async (uuid: string) => {
     if (!confirm(t('products.deleteConfirm'))) return;
-    setLoading(true);
+    setDeleting(uuid);
     try {
       await deleteProduct(uuid);
-      await loadProducts();
+      window.location.reload();
     } catch (err) {
       console.error("Delete error:", err);
       setError(t('products.deleteError'));
-    } finally {
-      setLoading(false);
+      setDeleting(null);
     }
   };
 
@@ -146,19 +149,28 @@ export default function Products() {
           <h1 className="text-3xl font-bold text-white font-inter">{t('products.title')}</h1>
           <p className="text-gray-500 text-sm font-inter">{t('products.subtitle')}</p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "", image: "" });
-            setError(null);
-            setShowForm(!showForm);
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          <IonIcon icon={addOutline} className="text-xl" />
-          <span>{t('products.addProduct')}</span>
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setEditing(null);
+              setForm({ name: "", price: "", stock: "", sku: "", barcode: "", description: "", gst_percent: "", hsn_code: "", image: "" });
+              setError(null);
+              setShowForm(!showForm);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <IonIcon icon={addOutline} className="text-xl" />
+            <span>{t('products.addProduct')}</span>
+          </button>
+          <button onClick={() => setShowImport(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
+            <IonIcon icon={cloudUploadOutline} className="text-xl" />
+            <span>Import Products</span>
+          </button>
+        </div>
       </div>
+
 
       {/* Error Message */}
       {error && (
@@ -501,10 +513,14 @@ export default function Products() {
                         </button>
                         <button
                           onClick={() => handleDelete(p.product_uuid)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          disabled={deleting === p.product_uuid}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                           title={t('products.deleteTitle')}
                         >
-                          <IonIcon icon={trashOutline} className="text-lg" />
+                          {deleting === p.product_uuid
+                            ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500" />
+                            : <IonIcon icon={trashOutline} className="text-lg" />
+                          }
                         </button>
                       </div>
                     </td>
@@ -515,6 +531,9 @@ export default function Products() {
           </table>
         </div>
       </div>
+      {showImport && (
+        <ImportProductsModal onClose={() => setShowImport(false)} onImported={loadProducts} />
+      )}
     </div>
   );
 }
