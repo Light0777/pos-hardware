@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, globalShortcut } = require('electron'); // ← added globalShortcut
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -125,11 +125,10 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools(); // only in dev
   } else {
     const indexPath = path.join(__dirname, '../dist/index.html');
     if (fs.existsSync(indexPath)) {
-      // ✅ Load with hash in the URL directly — no post-load redirect
       mainWindow.loadFile(indexPath, { hash: '/' });
     } else {
       console.error(`Frontend not found at: ${indexPath}`);
@@ -137,12 +136,40 @@ function createWindow() {
     }
   }
 
+  // ============================================
+  // 🔒 DISABLE DEVTOOLS SHORTCUTS IN PRODUCTION
+  // ============================================
+  if (app.isPackaged) {
+    // Prevent Ctrl+Shift+I (DevTools)
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+      // Do nothing – shortcut is disabled
+      console.log('DevTools shortcut blocked in production');
+    });
+    // Prevent F12
+    globalShortcut.register('F12', () => {
+      // Do nothing
+    });
+    // Prevent Ctrl+Shift+J (Console)
+    globalShortcut.register('CommandOrControl+Shift+J', () => {
+      // Do nothing
+    });
+    // Prevent Ctrl+Shift+C (Element inspector)
+    globalShortcut.register('CommandOrControl+Shift+C', () => {
+      // Do nothing
+    });
+  }
+
+  // Optional: Disable right‑click context menu (prevents "Inspect")
+  mainWindow.webContents.on('context-menu', (e) => {
+    e.preventDefault();
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
-// ✅ Wait for backend to actually be ready instead of hardcoded 3s
+// Wait for backend to actually be ready instead of hardcoded 3s
 app.whenReady().then(() => {
   startBackend();
   waitForBackend('http://127.0.0.1:3000/api/health')
@@ -169,6 +196,11 @@ app.on('activate', () => {
   if (mainWindow === null) {
     createWindow();
   }
+});
+
+// Clean up global shortcuts when app quits
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
 
 process.on('SIGINT', () => {

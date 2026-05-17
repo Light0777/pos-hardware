@@ -21,10 +21,10 @@ export async function getDashboardReport() {
       console.error("Dashboard API error:", res.status, errorText);
       throw new Error(`Dashboard failed: ${res.status}`);
     }
-    
+
     const data = await res.json();
     console.log("Dashboard data received:", data);
-    
+
     // Ensure the data has all required fields
     return {
       today_sales: data.today_sales || 0,
@@ -61,9 +61,9 @@ export async function getTopProducts() {
 
     if (!res.ok) throw new Error("Top products failed");
     const data = await res.json();
-    
+
     console.log("Top products raw response:", data);
-    
+
     // Handle different response structures
     // Case 1: { success: true, data: [...] }
     if (data.success && Array.isArray(data.data)) {
@@ -98,9 +98,9 @@ export async function getStockReport() {
 
     if (!res.ok) throw new Error("Stock failed");
     const data = await res.json();
-    
+
     console.log("Stock report raw response:", data);
-    
+
     // Handle different response structures
     // Case 1: { success: true, data: [...] }
     if (data.success && Array.isArray(data.data)) {
@@ -135,9 +135,9 @@ export async function getProfitReport() {
 
     if (!res.ok) throw new Error("Profit failed");
     const data = await res.json();
-    
+
     console.log("Profit report raw response:", data);
-    
+
     // Handle different response structures
     // Case 1: { success: true, data: { revenue, cost, profit } }
     if (data.success && data.data) {
@@ -190,4 +190,16 @@ export async function getProfitTrend() {
     console.error("Profit trend API error:", error);
     return [];
   }
+}
+
+export async function getDailyReport(date?: string) {
+  const query = date ? `?date=${date}` : '';
+  const response = await apiGet(`/reports/daily${query}`);
+  return response.data || response;
+}
+
+export async function getGSTReport(month?: string) {
+  const query = month ? `?month=${month}` : '';
+  const response = await apiGet(`/reports/gst${query}`);
+  return response.data || response;
 }

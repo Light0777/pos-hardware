@@ -17,6 +17,9 @@ import SupplierPage from "./pages/admin/Supplier";
 import PurchasePage from "./pages/admin/Purchase";
 import PurchaseHistory from "./pages/admin/PurchaseHistory";
 import CustomerPage from "./pages/admin/Customer";
+import DailyReport from "./pages/admin/DailyReport";
+import EODPage from "./pages/admin/EOD";
+import GSTReport from "./pages/admin/GSTReport";
 
 import AuthGate from "./context/AuthGate";
 import ProtectedRoute from "./context/ProtectedRoute";
@@ -71,6 +74,9 @@ export default function App() {
         <Route path="staff" element={<Staff />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="/admin/daily-report" element={<DailyReport />} />
+        <Route path="/admin/eod" element={<EODPage />} />
+        <Route path="/admin/gst-report" element={<GSTReport />} />
       </Route>
 
       {/* FALLBACK */}

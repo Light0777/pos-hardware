@@ -12,8 +12,11 @@ import {
   checkmarkCircleOutline,
   warningOutline,
   cloudUploadOutline,
+  pricetagOutline,
 } from "ionicons/icons";
 import ImportProductsModal from "../../components/ImportProductsModal";
+import PrintLabelsModal from "../../components/PrintLabelsModal";
+import { createPortal } from "react-dom";
 
 export default function Products() {
   const { t } = useTranslation();
@@ -25,6 +28,7 @@ export default function Products() {
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [showPrintLabels, setShowPrintLabels] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -167,6 +171,11 @@ export default function Products() {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
             <IonIcon icon={cloudUploadOutline} className="text-xl" />
             <span>Import Products</span>
+          </button>
+          <button onClick={() => setShowPrintLabels(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
+            <IonIcon icon={pricetagOutline} className="text-xl" />
+            <span>Print Labels</span>
           </button>
         </div>
       </div>
@@ -533,6 +542,13 @@ export default function Products() {
       </div>
       {showImport && (
         <ImportProductsModal onClose={() => setShowImport(false)} onImported={loadProducts} />
+      )}
+      {showPrintLabels && createPortal(
+        <PrintLabelsModal
+          products={products}
+          onClose={() => setShowPrintLabels(false)}
+        />,
+        document.body
       )}
     </div>
   );

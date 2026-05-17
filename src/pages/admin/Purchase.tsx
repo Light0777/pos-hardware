@@ -98,10 +98,6 @@ export default function PurchasePage() {
     console.log("🔹 supplierId:", supplierId);
     console.log("🔹 validItems:", validItems);
 
-    if (!supplierId) {
-      setError(t('purchase.selectSupplierError'));
-      return;
-    }
     if (validItems.length === 0) {
       setError(t('purchase.addItemsError'));
       return;
@@ -111,7 +107,7 @@ export default function PurchasePage() {
     setLoading(true);
 
     const payload = {
-      supplier_uuid: supplierId,
+      supplier_uuid: supplierId || null,
       items: validItems,
     };
     console.log("📤 Sending payload:", payload);
@@ -430,7 +426,7 @@ export default function PurchasePage() {
       {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        disabled={loading || items.length === 0 || !supplierId}
+        disabled={loading || items.length === 0}
         className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-greeny-800 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
       >
         {loading ? (

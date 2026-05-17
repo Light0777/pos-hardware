@@ -1,5 +1,5 @@
 import { IonIcon } from '@ionic/react';
-import { printOutline, closeOutline } from 'ionicons/icons';
+import { printOutline, closeOutline, logoWhatsapp } from 'ionicons/icons';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -65,6 +65,47 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
     }
   };
 
+  const handleWhatsApp = () => {
+    const phone = invoice.customer?.mobile
+      ? `91${invoice.customer.mobile.replace(/\D/g, '')}` // prepend country code, strip non-digits
+      : '';
+
+    const shopName = invoice.shop?.name || 'Our Store';
+    const invoiceNo = invoice.invoice_number || 'N/A';
+    const date = formatDate(invoice.date || invoice.created_at || new Date().toISOString());
+
+    const itemLines = (invoice.items || [])
+      .map((item: any) => `  • ${item.name} x${item.qty} = ₹${formatNumber(item.total)}`)
+      .join('\n');
+
+    const paymentLines = (invoice.payments || [])
+      .map((p: any) => `  ${p.method.toUpperCase()}: ₹${formatNumber(p.amount)}`)
+      .join('\n');
+
+    const message = [
+      `${shopName}`,
+      `Invoice: ${invoiceNo}`,
+      `Date: ${date}`,
+      invoice.customer?.name ? `Customer: ${invoice.customer.name}` : null,
+      ``,
+      `Items:`,
+      itemLines,
+      ``,
+      `Subtotal: ₹${formatNumber(invoice.summary?.total || 0)}`,
+      (invoice.summary?.tax || 0) > 0 ? `GST: ₹${formatNumber(invoice.summary.tax)}` : null,
+      (invoice.discount || 0) > 0 ? `Discount: -₹${formatNumber(invoice.discount)}` : null,
+      `Total: ₹${formatNumber(invoice.summary?.grand_total || 0)}`,
+      ``,
+      `Payment:`,
+      paymentLines,
+      ``,
+      `Thank you for shopping with us! 🙏`,
+    ].filter(line => line !== null).join('\n');
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const dashes = '--------------------------------';
   const doubleDashes = '================================';
 
@@ -80,6 +121,15 @@ export default function InvoiceReceipt({ invoice, onClose, autoPrint }: InvoiceR
           <IonIcon icon={printOutline} />
           {t('receipt.print')}
         </button>
+
+        <button
+          onClick={handleWhatsApp}
+          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 shadow-lg"
+        >
+          <IonIcon icon={logoWhatsapp} />
+          WhatsApp
+        </button>
+
         <button
           onClick={onClose}
           className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 shadow-lg"

@@ -15,7 +15,8 @@ import {
   personCircleOutline,
   logOutOutline,
   checkmarkCircle,
-  closeOutline
+  closeOutline,
+  moonOutline
 } from "ionicons/icons";
 import { IonIcon } from "@ionic/react";
 import { useState } from "react";
@@ -41,18 +42,17 @@ function NavItem({ label, path, currentPath, icon, onClick }: NavItemProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-        active
-          ? "bg-green-500 text-white shadow-lg"  // Active: blue background
-          : "text-gray-300 hover:bg-[#212121] hover:text-white"  // Inactive: dark hover
-      }`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${active
+        ? "bg-green-500 text-white shadow-lg"  // Active: blue background
+        : "text-gray-300 hover:bg-[#212121] hover:text-white"  // Inactive: dark hover
+        }`}
     >
       {/* Menu Icon */}
       <IonIcon icon={icon} className={`text-xl ${active ? "text-white" : "text-gray-400"}`} />
-      
+
       {/* Menu Label */}
       <span className="text-sm font-medium">{label}</span>
-      
+
       {/* Active Indicator - Checkmark icon appears only on active item */}
       {active && (
         <IonIcon icon={checkmarkCircle} className="text-white text-sm ml-auto" />
@@ -117,7 +117,7 @@ export default function AdminLayout() {
   // ============================================
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      
+
       {/* ========== SIDEBAR HEADER ========== */}
       {/* Shows "Admin Panel" title and user role (owner/manager) */}
       <div className="p-4">
@@ -134,7 +134,7 @@ export default function AdminLayout() {
       {/* ========== SIDEBAR NAVIGATION ========== */}
       {/* Scrollable area containing all menu items */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide">
-        
+
         {/* DASHBOARD SECTION - Only visible to 'owner' role */}
         {user.role === "owner" && (
           <NavItem
@@ -194,6 +194,30 @@ export default function AdminLayout() {
               currentPath={currentPath}
               icon={barChartOutline}
               onClick={() => navigate("/admin/reports")}
+            />
+
+            <NavItem
+              label={t('adminLayout.nav.dailyReport')}
+              path="/admin/daily-report"
+              currentPath={currentPath}
+              icon={documentTextOutline}
+              onClick={() => navigate("/admin/daily-report")}
+            />
+
+            <NavItem
+              label={t('adminLayout.nav.endOfDay')}
+              path="/admin/eod"
+              currentPath={currentPath}
+              icon={moonOutline}
+              onClick={() => navigate("/admin/eod")}
+            />
+
+            <NavItem
+              label={t('adminLayout.nav.gstReport')}
+              path="/admin/gst-report"
+              currentPath={currentPath}
+              icon={documentTextOutline}
+              onClick={() => navigate("/admin/gst-report")}
             />
 
             <NavItem
@@ -270,7 +294,7 @@ export default function AdminLayout() {
   // ============================================
   return (
     <div className="h-screen flex flex-col font-inter bg-[#222]">
-      
+
       {/* ========== TOPBAR ========== */}
       {/* Fixed at top, contains: Company name, Time, Notifications, User profile */}
       {/* Passes mobile menu toggle function to Topbar */}
@@ -279,7 +303,7 @@ export default function AdminLayout() {
       {/* ========== MAIN CONTENT AREA ========== */}
       {/* Contains Sidebar + Page Content */}
       <div className="flex overflow-hidden">
-        
+
         {/* ========== DESKTOP SIDEBAR ========== */}
         {/* Hidden on mobile (md:hidden), visible on tablet/desktop */}
         {/* Fixed width of 64 (256px), dark background */}
@@ -298,7 +322,7 @@ export default function AdminLayout() {
               className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
-            
+
             {/* Mobile Sidebar Panel */}
             {/* Slides in from left, same content as desktop sidebar */}
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#141414] text-white z-50 md:hidden overflow-y-auto">
