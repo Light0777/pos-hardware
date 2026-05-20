@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getProducts,
@@ -22,6 +22,7 @@ import {
   cloudUploadOutline,
   pricetagOutline,
   addCircleOutline,
+  chevronDownOutline,
 } from "ionicons/icons";
 import ImportProductsModal from "../../components/ImportProductsModal";
 import PrintLabelsModal from "../../components/PrintLabelsModal";
@@ -46,6 +47,294 @@ const EMPTY_FORM = {
   category_uuid: "",
 };
 
+// GST options
+const GST_OPTIONS = [
+  { value: "0", label: "0% (Tax Exempt)" },
+  { value: "5", label: "5% (Low Rate)" },
+  { value: "12", label: "12% (Standard)" },
+  { value: "18", label: "18% (Standard)" },
+  { value: "28", label: "28% (High Rate)" },
+];
+
+// Custom Dropdown Component for Units (with filter)
+const UnitDropdown = ({ value, onChange, options, onSaveNew, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value || "");
+  const [filteredOptions, setFilteredOptions] = useState(options);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setInputValue(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    const filter = inputValue.toLowerCase();
+    setFilteredOptions(
+      options.filter((opt: string) => opt.toLowerCase().includes(filter))
+    );
+  }, [inputValue, options]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (option: string) => {
+    setInputValue(option);
+    onChange(option);
+    setIsOpen(false);
+  };
+
+  const handleBlur = () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed) {
+      onChange("");
+      return;
+    }
+    if (!options.includes(trimmed)) {
+      onSaveNew(trimmed);
+    }
+    onChange(trimmed);
+  };
+
+  return (
+    <div className="relative flex-1" ref={dropdownRef}>
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg p-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray text-white placeholder-gray-400"
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={handleBlur}
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+        >
+          <IonIcon icon={chevronDownOutline} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {isOpen && filteredOptions.length > 0 && (
+        <ul className="absolute z-10 w-full mt-1 bg-black border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {filteredOptions.map((opt: string) => (
+            <li
+              key={opt}
+              onClick={() => handleSelect(opt)}
+              className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white"
+            >
+              {opt}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+// Custom Dropdown Component for Categories (async creation, with filter)
+const CategoryDropdown = ({ value, onChange, options, onCreateNew, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [localOptions, setLocalOptions] = useState(options);
+  const [filteredOptions, setFilteredOptions] = useState(options);
+
+  useEffect(() => {
+    setLocalOptions(options);
+    const selected = options.find((c: any) => c.category_uuid === value);
+    setInputValue(selected?.name || "");
+  }, [options, value]);
+
+  useEffect(() => {
+    const filter = inputValue.toLowerCase();
+    setFilteredOptions(
+      localOptions.filter((cat: any) => cat.name.toLowerCase().includes(filter))
+    );
+  }, [inputValue, localOptions]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (category: any) => {
+    setInputValue(category.name);
+    onChange(category.category_uuid);
+    setIsOpen(false);
+  };
+
+  const handleBlur = async () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed) {
+      onChange("");
+      return;
+    }
+    const existing = localOptions.find(
+      (c: any) => c.name.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      onChange(existing.category_uuid);
+    } else {
+      try {
+        const created = await onCreateNew(trimmed);
+        onChange(created.category_uuid);
+      } catch (err) {
+        console.error("Failed to create category:", err);
+      }
+    }
+  };
+
+  return (
+    <div className="relative flex-1" ref={dropdownRef}>
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg p-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray text-white placeholder-gray-400"
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={handleBlur}
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+        >
+          <IonIcon icon={chevronDownOutline} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {isOpen && filteredOptions.length > 0 && (
+        <ul className="absolute z-10 w-full mt-1 bg-black border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {filteredOptions.map((cat: any) => (
+            <li
+              key={cat.category_uuid}
+              onClick={() => handleSelect(cat)}
+              className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white"
+            >
+              {cat.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+// Custom Dropdown Component for GST (simple select with filter)
+// Custom Dropdown Component for GST (simple select with filter)
+const GstDropdown = ({ value, onChange, placeholder }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [filteredOptions, setFilteredOptions] = useState(GST_OPTIONS);
+
+  // When value changes, set inputValue – but leave empty if value is "0"
+  useEffect(() => {
+    if (value === "0") {
+      setInputValue("");
+    } else {
+      const selected = GST_OPTIONS.find(opt => opt.value === value);
+      setInputValue(selected?.label || "");
+    }
+  }, [value]);
+
+  useEffect(() => {
+    const filter = inputValue.toLowerCase();
+    setFilteredOptions(
+      GST_OPTIONS.filter(opt => opt.label.toLowerCase().includes(filter))
+    );
+  }, [inputValue]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (opt: { value: string; label: string }) => {
+    if (opt.value === "0") {
+      setInputValue("");          // keep input empty for 0%
+    } else {
+      setInputValue(opt.label);
+    }
+    onChange(opt.value);
+    setIsOpen(false);
+  };
+
+  const handleBlur = () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed) {
+      onChange("0");
+      setInputValue("");
+      return;
+    }
+    const matched = GST_OPTIONS.find(opt => opt.label.toLowerCase() === trimmed.toLowerCase());
+    if (matched) {
+      if (matched.value === "0") {
+        setInputValue("");
+      } else {
+        setInputValue(matched.label);
+      }
+      onChange(matched.value);
+    } else {
+      // No match: default to 0% and clear input
+      onChange("0");
+      setInputValue("");
+    }
+  };
+
+  return (
+    <div className="relative flex-1" ref={dropdownRef}>
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg p-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-black text-white placeholder-gray-400"
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={handleBlur}
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+        >
+          <IonIcon icon={chevronDownOutline} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {isOpen && filteredOptions.length > 0 && (
+        <ul className="absolute z-10 w-full mt-1 bg-black border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {filteredOptions.map((opt) => (
+            <li
+              key={opt.value}
+              onClick={() => handleSelect(opt)}
+              className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white"
+            >
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 export default function Products() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<any[]>([]);
@@ -62,7 +351,6 @@ export default function Products() {
   const [categories, setCategories] = useState<any[]>([]);
   const [categoryAttributes, setCategoryAttributes] = useState<any[]>([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
-  const [categoryInput, setCategoryInput] = useState("");
 
   // ── Product Units state ──────────────────────────────────────────────────
   const [units, setUnits] = useState<any[]>([]);
@@ -75,6 +363,36 @@ export default function Products() {
     is_base_unit: false,
   });
   const [showUnitForm, setShowUnitForm] = useState(false);
+
+  const [unitsMasterList, setUnitsMasterList] = useState<string[]>([
+    "piece", "box", "pack", "set", "pair", "roll", "bundle", "bag",
+    "kg", "g", "litre", "ml", "meter", "feet", "inch", "sqft", "dozen"
+  ]);
+
+  const loadCustomUnits = () => {
+    const stored = localStorage.getItem("custom_units");
+    if (stored) {
+      try {
+        const custom = JSON.parse(stored);
+        setUnitsMasterList(prev => [...new Set([...prev, ...custom])]);
+      } catch (e) { }
+    }
+  };
+
+  const saveNewUnit = (newUnit: string) => {
+    const trimmed = newUnit.trim().toLowerCase();
+    if (!trimmed) return;
+    if (!unitsMasterList.includes(trimmed)) {
+      const updatedList = [...unitsMasterList, trimmed];
+      setUnitsMasterList(updatedList);
+      const builtIn = new Set([
+        "piece", "box", "pack", "set", "pair", "roll", "bundle", "bag",
+        "kg", "g", "litre", "ml", "meter", "feet", "inch", "sqft", "dozen"
+      ]);
+      const customOnly = updatedList.filter(u => !builtIn.has(u));
+      localStorage.setItem("custom_units", JSON.stringify(customOnly));
+    }
+  };
 
   const loadProducts = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -99,6 +417,7 @@ export default function Products() {
   useEffect(() => {
     loadProducts();
     loadCategories();
+    loadCustomUnits();
   }, []);
 
   const loadCategories = async () => {
@@ -114,7 +433,6 @@ export default function Products() {
     }
     getCategoryAttributes(form.category_uuid).then((attrs) => {
       setCategoryAttributes(attrs);
-      // Pre-fill existing values when editing
       if (editing?.attributes?.length) {
         const prefilled: Record<string, string> = {};
         for (const a of editing.attributes) {
@@ -127,7 +445,6 @@ export default function Products() {
     });
   }, [form.category_uuid]);
 
-  // When editing changes, load that product's units
   useEffect(() => {
     if (editing?.product_uuid) {
       loadUnits(editing.product_uuid);
@@ -154,12 +471,11 @@ export default function Products() {
         hsn_code: form.hsn_code || undefined,
         unit: form.unit || "piece",
         image: form.image || undefined,
-        category_uuid: form.category_uuid || undefined,  // ← add
+        category_uuid: form.category_uuid || undefined,
       };
       if (form.purchase_price) {
         payload.purchase_price = Number(form.purchase_price);
       }
-      // Build attributes array from filled-in values
       const filledAttributes = Object.entries(attributeValues)
         .filter(([, value]) => value !== "")
         .map(([attribute_uuid, value]) => ({ attribute_uuid, value }));
@@ -202,9 +518,6 @@ export default function Products() {
       category_uuid: p.category_uuid || "",
     });
     setShowForm(true);
-    setCategoryInput(
-      categories.find((c) => c.category_uuid === p.category_uuid)?.name || ""
-    );
   };
 
   const handleDelete = async (uuid: string) => {
@@ -274,7 +587,6 @@ export default function Products() {
               setCategoryAttributes([]);
               setAttributeValues({});
               setShowForm(!showForm);
-              setCategoryInput("");
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
@@ -447,29 +759,30 @@ export default function Products() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                  <select
-                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.unit}
-                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  >
-                    <option value="piece">Piece</option>
-                    <option value="box">Box</option>
-                    <option value="pack">Pack</option>
-                    <option value="set">Set</option>
-                    <option value="pair">Pair</option>
-                    <option value="roll">Roll</option>
-                    <option value="bundle">Bundle</option>
-                    <option value="bag">Bag</option>
-                    <option value="kg">Kg</option>
-                    <option value="g">Gram</option>
-                    <option value="litre">Litre</option>
-                    <option value="ml">ML</option>
-                    <option value="meter">Meter</option>
-                    <option value="feet">Feet</option>
-                    <option value="inch">Inch</option>
-                    <option value="sqft">Sq. Ft.</option>
-                    <option value="dozen">Dozen</option>
-                  </select>
+                  <div className="flex gap-2">
+                    <UnitDropdown
+                      value={form.unit}
+                      onChange={(val: string) => setForm({ ...form, unit: val })}
+                      options={unitsMasterList}
+                      onSaveNew={saveNewUnit}
+                      placeholder="Select or type new unit…"
+                    />
+                    {form.unit && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, unit: "" })}
+                        className="text-gray-400 hover:text-red-500 px-2 transition"
+                        title="Clear unit"
+                      >
+                        <IonIcon icon={closeOutline} />
+                      </button>
+                    )}
+                  </div>
+                  {form.unit && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Unit: {form.unit}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -488,50 +801,21 @@ export default function Products() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      list="category-list"
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Select or type new category…"
-                      value={categoryInput}
-                      onChange={(e) => setCategoryInput(e.target.value)}
-                      onBlur={async () => {
-                        const trimmed = categoryInput.trim();
-                        if (!trimmed) {
-                          setForm({ ...form, category_uuid: "" });
-                          return;
-                        }
-                        // Check if it matches an existing category
-                        const existing = categories.find(
-                          (c) => c.name.toLowerCase() === trimmed.toLowerCase()
-                        );
-                        if (existing) {
-                          setForm({ ...form, category_uuid: existing.category_uuid });
-                        } else {
-                          // Create new category on the fly
-                          try {
-                            const created = await createCategory({ name: trimmed });
-                            await loadCategories();
-                            setForm({ ...form, category_uuid: created.category_uuid });
-                          } catch (err) {
-                            console.error("Failed to create category:", err);
-                          }
-                        }
-                      }}
-                    />
-                    <datalist id="category-list">
-                      {categories.map((c) => (
-                        <option key={c.category_uuid} value={c.name} />
-                      ))}
-                    </datalist>
-                  </div>
+                  <CategoryDropdown
+                    value={form.category_uuid}
+                    onChange={(uuid: string) => setForm({ ...form, category_uuid: uuid })}
+                    options={categories}
+                    onCreateNew={async (name: string) => {
+                      const created = await createCategory({ name });
+                      await loadCategories();
+                      return created;
+                    }}
+                    placeholder="Select or type new category…"
+                  />
                   {form.category_uuid && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setCategoryInput("");
-                        setForm({ ...form, category_uuid: "" });
-                      }}
+                      onClick={() => setForm({ ...form, category_uuid: "" })}
                       className="text-gray-400 hover:text-red-500 px-2 transition"
                       title="Clear category"
                     >
@@ -581,21 +865,19 @@ export default function Products() {
               {/* GST + HSN */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("products.gstPercentLabel")}</label>
-                  <select
-                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("products.gstPercentLabel")}
+                  </label>
+                  <GstDropdown
                     value={form.gst_percent}
-                    onChange={(e) => setForm({ ...form, gst_percent: e.target.value })}
-                  >
-                    <option value="0">0% — {t("products.gstExempt")}</option>
-                    <option value="5">5% — {t("products.gst5")}</option>
-                    <option value="12">12% — {t("products.gst12")}</option>
-                    <option value="18">18% — {t("products.gst18")}</option>
-                    <option value="28">28% — {t("products.gst28")}</option>
-                  </select>
+                    onChange={(val: string) => setForm({ ...form, gst_percent: val })}
+                    placeholder="Select GST rate…"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("products.hsnCodeLabel")}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("products.hsnCodeLabel")}
+                  </label>
                   <input
                     className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder={t("products.hsnPlaceholder")}

@@ -146,44 +146,6 @@ export default function AdminLayout() {
           />
         )}
 
-        {/* MANAGEMENT SECTION - Visible to 'owner' and 'manager' roles */}
-        {/* Contains: Products, Stock, Sales, Customer */}
-        {["owner", "manager"].includes(user.role) && (
-          <NavSection title={t('adminLayout.sections.management')}>
-            <NavItem
-              label={t('adminLayout.nav.products')}
-              path="/admin/products"
-              currentPath={currentPath}
-              icon={cubeOutline}
-              onClick={() => navigate("/admin/products")}
-            />
-
-            <NavItem
-              label={t('adminLayout.nav.stock')}
-              path="/admin/stock"
-              currentPath={currentPath}
-              icon={documentTextOutline}
-              onClick={() => navigate("/admin/stock")}
-            />
-
-            <NavItem
-              label={t('adminLayout.nav.sales')}
-              path="/admin/sales"
-              currentPath={currentPath}
-              icon={documentTextOutline}
-              onClick={() => navigate("/admin/sales")}
-            />
-
-            <NavItem
-              label={t('adminLayout.nav.customer')}
-              path="/admin/customer"
-              currentPath={currentPath}
-              icon={peopleOutline}
-              onClick={() => navigate("/admin/customer")}
-            />
-          </NavSection>
-        )}
-
         {/* BUSINESS SECTION - Only visible to 'owner' role */}
         {/* Contains: Reports, Supplier, Purchase, Purchases, Staff, Settings */}
         {user.role === "owner" && (
@@ -251,13 +213,43 @@ export default function AdminLayout() {
               icon={peopleCircleOutline}
               onClick={() => navigate("/admin/staff")}
             />
+          </NavSection>
+        )}
+
+        {/* MANAGEMENT SECTION - Visible to 'owner' and 'manager' roles */}
+        {/* Contains: Products, Stock, Sales, Customer */}
+        {["owner", "manager"].includes(user.role) && (
+          <NavSection title={t('adminLayout.sections.management')}>
+            <NavItem
+              label={t('adminLayout.nav.products')}
+              path="/admin/products"
+              currentPath={currentPath}
+              icon={cubeOutline}
+              onClick={() => navigate("/admin/products")}
+            />
 
             <NavItem
-              label={t('adminLayout.nav.settings')}
-              path="/admin/settings"
+              label={t('adminLayout.nav.stock')}
+              path="/admin/stock"
               currentPath={currentPath}
-              icon={settingsOutline}
-              onClick={() => navigate("/admin/settings")}
+              icon={documentTextOutline}
+              onClick={() => navigate("/admin/stock")}
+            />
+
+            <NavItem
+              label={t('adminLayout.nav.sales')}
+              path="/admin/sales"
+              currentPath={currentPath}
+              icon={documentTextOutline}
+              onClick={() => navigate("/admin/sales")}
+            />
+
+            <NavItem
+              label={t('adminLayout.nav.customer')}
+              path="/admin/customer"
+              currentPath={currentPath}
+              icon={peopleOutline}
+              onClick={() => navigate("/admin/customer")}
             />
           </NavSection>
         )}
@@ -271,6 +263,13 @@ export default function AdminLayout() {
             currentPath={currentPath}
             icon={personCircleOutline}
             onClick={() => navigate("/admin/profile")}
+          />
+          <NavItem
+            label={t('adminLayout.nav.settings')}
+            path="/admin/settings"
+            currentPath={currentPath}
+            icon={settingsOutline}
+            onClick={() => navigate("/admin/settings")}
           />
         </NavSection>
       </div>
