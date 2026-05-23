@@ -13,13 +13,22 @@ function getHeaders() {
 
 // 🔥 CENTRALIZED HANDLER
 async function handleResponse(res: Response) {
-  if (res.status === 401) {
+  // Don't auto-redirect for auth endpoints — let the caller handle it
+  if (res.status === 401 && !res.url.includes('/auth/login')) {
     localStorage.removeItem("token");
-    window.location.href = "auth/login";
+    window.location.href = "/login";
     return;
   }
 
-  return res.json();
+  const data = await res.json();
+
+  // Throw so catch blocks in callers receive the error message
+  if (!res.ok) {
+    const message = data?.message || "Something went wrong";
+    throw new Error(message);
+  }
+
+  return data;
 }
 
 export async function apiGet(url: string) {

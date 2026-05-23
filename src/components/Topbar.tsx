@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
-import { checkmarkCircle, exit, barbellOutline, personCircleOutline, settingsOutline, logOutOutline, notifications, notificationsOutline, menuOutline } from "ionicons/icons";
+import { checkmarkCircle, exit, barbellOutline, personCircleOutline, settingsOutline, logOutOutline, notifications, notificationsOutline, menuOutline, closeCircleOutline, warningOutline } from "ionicons/icons";
 import { IonIcon } from "@ionic/react";
 import { useState, useRef, useEffect } from "react";
 import { getSettings } from "../renderer/services/settingsApi";
+import { getStock } from "../renderer/services/stockApi";
 
 interface TopbarProps {
     onMenuClick?: () => void;
@@ -28,7 +29,7 @@ function getPageTitle(path: string, t: (key: string) => string) {
 export default function Topbar({ onMenuClick }: TopbarProps) {
     const { t } = useTranslation();
     const location = useLocation();
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -47,6 +48,48 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
             if (name) setShopName(name);
         });
     }, [t]);
+
+    const [lowStockCount, setLowStockCount] = useState(0);
+    const notifRef = useRef<HTMLDivElement>(null);
+    const notifButtonRef = useRef<HTMLButtonElement>(null);
+    const [showNotifMenu, setShowNotifMenu] = useState(false);
+    const [lowStockItems, setLowStockItems] = useState<any[]>([]);
+
+    useEffect(() => {
+        getStock().then((data: any[]) => {
+            const count = Array.isArray(data)
+                ? data.filter(item => item && item.stock < 10).length
+                : 0;
+            setLowStockCount(count);
+        }).catch(() => setLowStockCount(0));
+    }, []);
+
+    useEffect(() => {
+        getStock().then((data: any[]) => {
+            const low = Array.isArray(data)
+                ? data.filter(item => item && item.stock < 10)
+                : [];
+            setLowStockItems(low);
+        }).catch(() => setLowStockItems([]));
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                showNotifMenu &&
+                notifRef.current &&
+                !notifRef.current.contains(event.target as Node) &&
+                notifButtonRef.current &&
+                !notifButtonRef.current.contains(event.target as Node)
+            ) {
+                setShowNotifMenu(false);
+            }
+        };
+        if (showNotifMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showNotifMenu]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -117,17 +160,101 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
                     <div className="text-xs text-gray-400">{currentDate}</div>
                 </div>
 
-                <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    className="relative px-3 py-2 bg-[#333333] text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
-                    title={t('topbar.notifications')}
-                >
-                    <IonIcon icon={notificationsOutline} className="text-xl top-0.5 relative" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                <div className="relative">
+                    <button
+                        ref={notifButtonRef}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowNotifMenu(!showNotifMenu);
+                        }}
+                        className="relative px-3 py-2 bg-[#333333] text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+                        title={t('topbar.notifications')}
+                    >
+                        <IonIcon icon={notificationsOutline} className="text-xl top-0.5 relative" />
+                        {lowStockItems.length > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                                {lowStockItems.length > 99 ? '99+' : lowStockItems.length}
+                            </span>
+                        )}
+                    </button>
+
+                    {showNotifMenu && (
+                        <div
+                            ref={notifRef}
+                            className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                        >
+                            {/* Header */}
+                            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                <h3 className="text-sm font-semibold text-gray-800">{t('topbar.notifTitle')}</h3>
+                                {lowStockItems.length > 0 && (
+                                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
+                                        {lowStockItems.length} {lowStockItems.length > 1 ? t('topbar.notifAlerts') : t('topbar.notifAlert')}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Body */}
+                            <div className="max-h-72 overflow-y-auto">
+                                {lowStockItems.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                                            <IonIcon icon={checkmarkCircle} className="text-2xl text-green-500" />
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-700">{t('topbar.notifAllGood')}</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('topbar.notifAllGoodSub')}</p>
+                                    </div>
+                                ) : (
+                                    <div className="py-1">
+                                        {lowStockItems.map((item) => (
+                                            <div
+                                                key={item.product_uuid}
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0"
+                                            >
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${item.stock === 0 ? 'bg-red-100' : 'bg-orange-100'
+                                                    }`}>
+                                                    <IonIcon
+                                                        icon={item.stock === 0 ? closeCircleOutline : warningOutline}
+                                                        className={`text-lg ${item.stock === 0 ? 'text-red-500' : 'text-orange-500'}`}
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0 text-start">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
+                                                    <p className={`text-xs mt-0.5 ${item.stock === 0 ? 'text-red-500' : 'text-orange-500'}`}>
+                                                        {item.stock === 0
+                                                            ? t('topbar.notifOutOfStock')
+                                                            : t('topbar.notifLowStock', { count: item.stock })}
+                                                    </p>
+                                                </div>
+                                                <span className={`text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0 ${item.stock === 0
+                                                        ? 'bg-red-100 text-red-600'
+                                                        : 'bg-orange-100 text-orange-600'
+                                                    }`}>
+                                                    {item.stock}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            {lowStockItems.length > 0 && (
+                                <div className="border-t border-gray-100 px-4 py-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowNotifMenu(false);
+                                            navigate('/admin/stock');
+                                        }}
+                                        className="w-full text-xs text-center text-blue-600 hover:text-blue-700 font-medium py-1"
+                                    >
+                                        {t('topbar.notifViewAll')}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* User Profile Dropdown */}
                 <div className="relative">
@@ -178,14 +305,14 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
                             <div className="py-1">
                                 <button
-                                    onClick={(e) => handleMenuClick(e, () => handleNavigation("/profile"))}
+                                    onClick={(e) => handleMenuClick(e, () => handleNavigation("/admin/profile"))}
                                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
                                 >
                                     <IonIcon icon={personCircleOutline} className="text-lg text-gray-400" />
                                     <span>{t('topbar.yourProfile')}</span>
                                 </button>
                                 <button
-                                    onClick={(e) => handleMenuClick(e, () => handleNavigation("/settings"))}
+                                    onClick={(e) => handleMenuClick(e, () => handleNavigation("/admin/settings"))}
                                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
                                 >
                                     <IonIcon icon={settingsOutline} className="text-lg text-gray-400" />

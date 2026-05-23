@@ -796,6 +796,14 @@
     "yourProfile": "Your Profile",
     "settingsDropdown": "Settings",
     "logout": "Logout",
+    "notifTitle": "Notifications",
+    "notifAlert": "alert",
+    "notifAlerts": "alerts",
+    "notifAllGood": "All stocked up!",
+    "notifAllGoodSub": "Every product has sufficient stock",
+    "notifOutOfStock": "Out of stock",
+    "notifLowStock": "Only {{count}} left · Needs attention",
+    "notifViewAll": "View all in Stock page →",
     "pageTitles": {
       "dashboard": "Dashboard",
       "products": "Products",
@@ -813,7 +821,8 @@
     "roles": {
       "owner": "Owner",
       "manager": "Manager",
-      "cashier": "Cashier"
+      "cashier": "Cashier",
+      "user": "User"
     }
   }
 }

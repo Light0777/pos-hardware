@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
 
-function waitForBackend(url, retries = 20, delay = 500) {
+function waitForBackend(url, retries = 40, delay = 500) {  // 20 seconds total
   return new Promise((resolve, reject) => {
     const attempt = () => {
       http.get(url, () => {
@@ -17,7 +17,6 @@ function waitForBackend(url, retries = 20, delay = 500) {
         }
       });
     };
-
     attempt();
   });
 }
@@ -120,11 +119,8 @@ function createWindow() {
     minWidth: 1200,
     minHeight: 700,
     show: false,
-
     title: 'POS Hardware',
-
     icon: path.join(__dirname, '../assets/icon.ico'),
-
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -141,48 +137,60 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    const indexPath = path.join(__dirname, '../dist/index.html');
+    // Show loading screen first
+    mainWindow.loadURL(`data:text/html,
+      <html>
+        <body style="margin:0;background:#141414;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
+          <div style="text-align:center">
+            <div style="width:48px;height:48px;border:4px solid #333;border-top:4px solid #22c55e;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 20px;"></div>
+            <p style="color:#fff;font-size:18px;font-weight:600;margin:0 0 8px">Starting POS...</p>
+            <p style="color:#666;font-size:13px;margin:0">Please wait while the app loads</p>
+          </div>
+          <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        </body>
+      </html>
+    `);
 
-    if (fs.existsSync(indexPath)) {
-      mainWindow.loadFile(indexPath, {
-        hash: '/'
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+    });
+
+    // Load actual app once backend is ready
+    waitForBackend('http://127.0.0.1:3000/api/health', 40, 500)
+      .then(() => {
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        if (fs.existsSync(indexPath)) {
+          mainWindow.loadFile(indexPath, { hash: '/' });
+        } else {
+          console.error('Frontend build not found');
+          app.quit();
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        // Try loading anyway as last resort
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        if (fs.existsSync(indexPath)) {
+          mainWindow.loadFile(indexPath, { hash: '/' });
+        }
       });
-    } else {
-      console.error('Frontend build not found');
-      app.quit();
-    }
   }
 
   // Disable inspect/devtools in production
   if (app.isPackaged) {
-    globalShortcut.register('CommandOrControl+Shift+I', () => {});
-    globalShortcut.register('F12', () => {});
-    globalShortcut.register('CommandOrControl+Shift+J', () => {});
-    globalShortcut.register('CommandOrControl+Shift+C', () => {});
+    globalShortcut.register('CommandOrControl+Shift+I', () => { });
+    globalShortcut.register('F12', () => { });
+    globalShortcut.register('CommandOrControl+Shift+J', () => { });
+    globalShortcut.register('CommandOrControl+Shift+C', () => { });
   }
 
-  // Disable right click
-  mainWindow.webContents.on('context-menu', (e) => {
-    e.preventDefault();
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  mainWindow.webContents.on('context-menu', (e) => e.preventDefault());
+  mainWindow.on('closed', () => { mainWindow = null; });
 }
 
 app.whenReady().then(() => {
   startBackend();
-
-  waitForBackend('http://127.0.0.1:3000/api/health')
-    .then(() => {
-      console.log('Backend ready');
-      createWindow();
-    })
-    .catch((err) => {
-      console.error(err.message);
-      createWindow();
-    });
+  createWindow();
 });
 
 app.on('window-all-closed', () => {

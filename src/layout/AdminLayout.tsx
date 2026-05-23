@@ -9,7 +9,6 @@ import {
   peopleOutline,
   barChartOutline,
   cartOutline,
-  walletOutline,
   peopleCircleOutline,
   settingsOutline,
   personCircleOutline,
@@ -24,39 +23,28 @@ import { useState } from "react";
 // ============================================
 // NAVIGATION ITEM COMPONENT
 // ============================================
-// Renders a single menu item in the sidebar
-// Shows active state with blue background and checkmark icon
-// ============================================
 interface NavItemProps {
-  label: string;           // Display text for the menu item
-  path: string;           // Route path to navigate to
-  currentPath: string;    // Current active route path
-  icon: string;           // Icon name from ionicons
-  onClick: () => void;    // Click handler function
+  label: string;
+  path: string;
+  currentPath: string;
+  icon: string;
+  onClick: () => void;
 }
 
 function NavItem({ label, path, currentPath, icon, onClick }: NavItemProps) {
-  // Check if this menu item is currently active
   const active = currentPath === path;
-
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${active
-        ? "bg-green-500 text-white shadow-lg"  // Active: blue background
-        : "text-gray-300 hover:bg-[#212121] hover:text-white"  // Inactive: dark hover
-        }`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+        active
+          ? "bg-green-500 text-white shadow-lg"
+          : "text-gray-300 hover:bg-[#212121] hover:text-white"
+      }`}
     >
-      {/* Menu Icon */}
       <IonIcon icon={icon} className={`text-xl ${active ? "text-white" : "text-gray-400"}`} />
-
-      {/* Menu Label */}
       <span className="text-sm font-medium">{label}</span>
-
-      {/* Active Indicator - Checkmark icon appears only on active item */}
-      {active && (
-        <IonIcon icon={checkmarkCircle} className="text-white text-sm ml-auto" />
-      )}
+      {active && <IonIcon icon={checkmarkCircle} className="text-white text-sm ml-auto" />}
     </button>
   );
 }
@@ -64,78 +52,51 @@ function NavItem({ label, path, currentPath, icon, onClick }: NavItemProps) {
 // ============================================
 // NAVIGATION SECTION COMPONENT
 // ============================================
-// Groups related menu items under a section header
-// Example: "MANAGEMENT" section contains Products, Stock, Sales, etc.
-// ============================================
 interface NavSectionProps {
-  title: string;          // Section header text (e.g., "MANAGEMENT", "BUSINESS")
-  children: React.ReactNode;  // NavItem components inside this section
+  title: string;
+  children: React.ReactNode;
 }
 
 function NavSection({ title, children }: NavSectionProps) {
   return (
     <div className="space-y-1 font-inter">
-      {/* Section Header - Uppercase, small, gray text */}
       <div className="p-3 text-xs font-semibold text-start text-gray-500 uppercase tracking-wider">
         {title}
       </div>
-      {/* All menu items in this section */}
       {children}
     </div>
   );
 }
 
 // ============================================
-// MAIN ADMIN LAYOUT COMPONENT
+// SIDEBAR CONTENT COMPONENT — defined OUTSIDE AdminLayout
 // ============================================
-// This is the main layout wrapper for all admin pages
-// Structure: Topbar at top, Sidebar on left, Content area on right
-// ============================================
-export default function AdminLayout() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();      // Hook for programmatic navigation
-  const location = useLocation();      // Hook to get current URL path
-  const { user } = useAuth();          // Get logged-in user data from auth context
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);  // Mobile sidebar state
+interface SidebarContentProps {
+  user: any;
+  currentPath: string;
+  navigate: (path: string) => void;
+  t: (key: string) => string;
+}
 
-  // ============================================
-  // LOADING STATE
-  // ============================================
-  // Show loading message while user data is being fetched
-  if (!user) {
-    return <div className="p-4">{t('adminLayout.loadingUser')}</div>;
-  }
-
-  // Get current path to determine active menu item
-  const currentPath = location.pathname;
-
-  // ============================================
-  // SIDEBAR CONTENT COMPONENT
-  // ============================================
-  // Contains all the sidebar UI - Header, Navigation, Footer
-  // Reused for both desktop and mobile sidebars
-  // ============================================
-  const SidebarContent = () => (
+function SidebarContent({ user, currentPath, navigate, t }: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full">
 
-      {/* ========== SIDEBAR HEADER ========== */}
-      {/* Shows "Admin Panel" title and user role (owner/manager) */}
+      {/* SIDEBAR HEADER */}
       <div className="p-4">
         <div className="text-start">
           <div className="text-lg font-bold text-white">
             {t('adminLayout.adminPanel')}
           </div>
           <div className="text-xs text-gray-400 capitalize mt-1">
-            {t(`adminLayout.roles.${user.role}`)}  {/* Displays: owner, manager, etc. */}
+            {t(`adminLayout.roles.${user.role}`)}
           </div>
         </div>
       </div>
 
-      {/* ========== SIDEBAR NAVIGATION ========== */}
-      {/* Scrollable area containing all menu items */}
+      {/* SIDEBAR NAVIGATION */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide">
 
-        {/* DASHBOARD SECTION - Only visible to 'owner' role */}
         {user.role === "owner" && (
           <NavItem
             label={t('adminLayout.nav.dashboard')}
@@ -146,8 +107,6 @@ export default function AdminLayout() {
           />
         )}
 
-        {/* BUSINESS SECTION - Only visible to 'owner' role */}
-        {/* Contains: Reports, Supplier, Purchase, Purchases, Staff, Settings */}
         {user.role === "owner" && (
           <NavSection title={t('adminLayout.sections.business')}>
             <NavItem
@@ -157,7 +116,6 @@ export default function AdminLayout() {
               icon={barChartOutline}
               onClick={() => navigate("/admin/reports")}
             />
-
             <NavItem
               label={t('adminLayout.nav.dailyReport')}
               path="/admin/daily-report"
@@ -165,7 +123,6 @@ export default function AdminLayout() {
               icon={documentTextOutline}
               onClick={() => navigate("/admin/daily-report")}
             />
-
             <NavItem
               label={t('adminLayout.nav.endOfDay')}
               path="/admin/eod"
@@ -173,7 +130,6 @@ export default function AdminLayout() {
               icon={moonOutline}
               onClick={() => navigate("/admin/eod")}
             />
-
             <NavItem
               label={t('adminLayout.nav.gstReport')}
               path="/admin/gst-report"
@@ -181,7 +137,6 @@ export default function AdminLayout() {
               icon={documentTextOutline}
               onClick={() => navigate("/admin/gst-report")}
             />
-
             <NavItem
               label={t('adminLayout.nav.supplier')}
               path="/admin/supplier"
@@ -189,7 +144,6 @@ export default function AdminLayout() {
               icon={peopleCircleOutline}
               onClick={() => navigate("/admin/supplier")}
             />
-
             <NavItem
               label={t('adminLayout.nav.purchase')}
               path="/admin/purchase"
@@ -197,7 +151,6 @@ export default function AdminLayout() {
               icon={cartOutline}
               onClick={() => navigate("/admin/purchase")}
             />
-
             <NavItem
               label={t('adminLayout.nav.purchases')}
               path="/admin/purchases"
@@ -205,7 +158,6 @@ export default function AdminLayout() {
               icon={documentTextOutline}
               onClick={() => navigate("/admin/purchases")}
             />
-
             <NavItem
               label={t('adminLayout.nav.staff')}
               path="/admin/staff"
@@ -216,8 +168,6 @@ export default function AdminLayout() {
           </NavSection>
         )}
 
-        {/* MANAGEMENT SECTION - Visible to 'owner' and 'manager' roles */}
-        {/* Contains: Products, Stock, Sales, Customer */}
         {["owner", "manager"].includes(user.role) && (
           <NavSection title={t('adminLayout.sections.management')}>
             <NavItem
@@ -227,7 +177,6 @@ export default function AdminLayout() {
               icon={cubeOutline}
               onClick={() => navigate("/admin/products")}
             />
-
             <NavItem
               label={t('adminLayout.nav.stock')}
               path="/admin/stock"
@@ -235,7 +184,6 @@ export default function AdminLayout() {
               icon={documentTextOutline}
               onClick={() => navigate("/admin/stock")}
             />
-
             <NavItem
               label={t('adminLayout.nav.sales')}
               path="/admin/sales"
@@ -243,7 +191,6 @@ export default function AdminLayout() {
               icon={documentTextOutline}
               onClick={() => navigate("/admin/sales")}
             />
-
             <NavItem
               label={t('adminLayout.nav.customer')}
               path="/admin/customer"
@@ -254,8 +201,6 @@ export default function AdminLayout() {
           </NavSection>
         )}
 
-        {/* ACCOUNT SECTION - Visible to all roles */}
-        {/* Contains: Profile */}
         <NavSection title={t('adminLayout.sections.account')}>
           <NavItem
             label={t('adminLayout.nav.profile')}
@@ -274,8 +219,7 @@ export default function AdminLayout() {
         </NavSection>
       </div>
 
-      {/* ========== SIDEBAR FOOTER ========== */}
-      {/* Fixed at bottom, contains button to navigate to POS page */}
+      {/* SIDEBAR FOOTER */}
       <div className="p-3 border-t border-gray-800">
         <button
           onClick={() => navigate("/pos")}
@@ -287,45 +231,49 @@ export default function AdminLayout() {
       </div>
     </div>
   );
+}
 
-  // ============================================
-  // MAIN LAYOUT RENDER
-  // ============================================
+// ============================================
+// MAIN ADMIN LAYOUT COMPONENT
+// ============================================
+export default function AdminLayout() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (!user) {
+    return <div className="p-4">{t('adminLayout.loadingUser')}</div>;
+  }
+
+  const currentPath = location.pathname;
+
   return (
     <div className="h-screen flex flex-col font-inter bg-[#222]">
 
-      {/* ========== TOPBAR ========== */}
-      {/* Fixed at top, contains: Company name, Time, Notifications, User profile */}
-      {/* Passes mobile menu toggle function to Topbar */}
       <Topbar onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
-      {/* ========== MAIN CONTENT AREA ========== */}
-      {/* Contains Sidebar + Page Content */}
       <div className="flex overflow-hidden">
 
-        {/* ========== DESKTOP SIDEBAR ========== */}
-        {/* Hidden on mobile (md:hidden), visible on tablet/desktop */}
-        {/* Fixed width of 64 (256px), dark background */}
+        {/* DESKTOP SIDEBAR */}
         <aside className="hidden md:block w-64 bg-[#222] text-white overflow-y-auto rounded-tl-2xl rounded-bl-2xl">
-          <SidebarContent />
+          <SidebarContent
+            user={user}
+            currentPath={currentPath}
+            navigate={navigate}
+            t={t}
+          />
         </aside>
 
-        {/* ========== MOBILE SIDEBAR (OVERLAY) ========== */}
-        {/* Only appears when hamburger menu is clicked on mobile */}
-        {/* Rendered as an overlay on top of the content */}
+        {/* MOBILE SIDEBAR */}
         {mobileMenuOpen && (
           <>
-            {/* Backdrop - dark semi-transparent background */}
-            {/* Clicking this closes the mobile sidebar */}
             <div
               className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
-
-            {/* Mobile Sidebar Panel */}
-            {/* Slides in from left, same content as desktop sidebar */}
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#141414] text-white z-50 md:hidden overflow-y-auto">
-              {/* Close button at top of mobile sidebar */}
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
                 <div className="text-lg font-bold text-blue-500">{t('adminLayout.adminPanel')}</div>
                 <button
@@ -335,17 +283,18 @@ export default function AdminLayout() {
                   <IonIcon icon={closeOutline} className="text-xl" />
                 </button>
               </div>
-              {/* Same sidebar content as desktop */}
-              <SidebarContent />
+              <SidebarContent
+                user={user}
+                currentPath={currentPath}
+                navigate={navigate}
+                t={t}
+              />
             </aside>
           </>
         )}
 
-        {/* ========== MAIN PAGE CONTENT ========== */}
-        {/* Right side content area where actual page components render */}
+        {/* MAIN CONTENT */}
         <main className="flex-1 flex flex-col overflow-hidden bg-[#141414] rounded-2xl rounded-br-2xl mr-2 mb-2 scrollbar-hide">
-          {/* Outlet renders the current route's component (child route) */}
-          {/* Examples: Products page, Sales page, Customer page, etc. */}
           <div className="flex-1 overflow-y-auto p-5 scrollbar-hide">
             <Outlet />
           </div>

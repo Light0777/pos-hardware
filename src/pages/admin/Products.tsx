@@ -343,7 +343,6 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showPrintLabels, setShowPrintLabels] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -592,13 +591,6 @@ export default function Products() {
           >
             <IonIcon icon={addOutline} className="text-xl" />
             <span>{t("products.addProduct")}</span>
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2"
-          >
-            <IonIcon icon={cloudUploadOutline} className="text-xl" />
-            <span>Import Products</span>
           </button>
           <button
             onClick={() => setShowPrintLabels(true)}
@@ -1141,7 +1133,6 @@ export default function Products() {
         </div>
       </div>
 
-      {showImport && <ImportProductsModal onClose={() => setShowImport(false)} onImported={loadProducts} />}
       {showPrintLabels && createPortal(<PrintLabelsModal products={products} onClose={() => setShowPrintLabels(false)} />, document.body)}
     </div>
   );

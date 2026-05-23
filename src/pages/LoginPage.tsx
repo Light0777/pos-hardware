@@ -7,31 +7,34 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     setIsLoading(true);
+    setError("");
     try {
       const res = await apiPost("/auth/login", { email, password });
-
-      console.log("Login response:", res);
 
       const token = res?.token || res?.data?.token;
       const user = res?.user || res?.data?.user;
 
       if (!token || !user) {
-        console.error("Invalid login response", res);
-        alert("Login response invalid");
+        setError("Invalid email or password. Please try again.");
+        setIsLoading(false);
         return;
       }
 
       login(token, user);
       navigate("/pos");
-    } catch (e) {
-      console.error(e);
-      alert("Login failed");
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Invalid email or password. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +138,21 @@ export default function LoginPage() {
                 />
               </div>
             </div>
+            {/* Error Alert */}
+            {error && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium">{error}</p>
+                <button onClick={() => setError("")} className="ml-auto text-red-400 hover:text-red-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
 
             {/* Login Button */}
             <button
@@ -143,10 +161,9 @@ export default function LoginPage() {
               className={`
                 w-full py-3 px-4 rounded-xl font-semibold text-white
                 transition-all duration-200 transform
-                ${
-                  isLoading || !email || !password
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 hover:shadow-lg active:scale-98"
+                ${isLoading || !email || !password
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 hover:shadow-lg active:scale-98"
                 }
               `}
             >

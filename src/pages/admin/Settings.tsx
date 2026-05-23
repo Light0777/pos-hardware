@@ -16,7 +16,16 @@ import {
   refreshOutline,
 } from "ionicons/icons";
 import { createBackup, listBackups, restoreBackup } from "../../renderer/services/settingsApi";
-import { cloudUploadOutline, cloudDownloadOutline, trashOutline } from "ionicons/icons";
+import { cloudUploadOutline, cloudDownloadOutline } from "ionicons/icons";
+
+const DEFAULT_SETTINGS = {
+  shop_name: "",
+  mobile: "",
+  address: "",
+  gstin: "",
+  invoice_prefix: "INV",
+  auto_print: 0,
+};
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -25,46 +34,68 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   const [backups, setBackups] = useState<any[]>([]);
   const [backupLoading, setBackupLoading] = useState(false);
 
+  // Helper: extract clean settings from any response shape
+  const extractCleanSettings = (obj: any) => {
+    if (!obj) return null;
+    let source = obj;
+    if (obj.data && typeof obj.data === 'object') source = obj.data;
+    // Return only known fields
+    return {
+      shop_name: source.shop_name || "",
+      mobile: source.mobile || "",
+      address: source.address || "",
+      gstin: source.gstin || "",
+      invoice_prefix: source.invoice_prefix || "INV",
+      auto_print: source.auto_print ?? 0,
+    };
+  };
+
+  // Load from localStorage first
   useEffect(() => {
-    loadSettings();
+    const cached = localStorage.getItem('shop_settings');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const clean = extractCleanSettings(parsed);
+        if (clean) {
+          setData({ ...DEFAULT_SETTINGS, ...clean });
+          console.log("Loaded from cache", clean);
+        } else {
+          setData({ ...DEFAULT_SETTINGS });
+        }
+      } catch (err) {
+        console.error("Failed to parse cached settings", err);
+        setData({ ...DEFAULT_SETTINGS });
+      }
+    } else {
+      setData({ ...DEFAULT_SETTINGS });
+    }
+    setLoading(false);
   }, []);
 
-  const loadSettings = async () => {
-    setLoading(true);
-    setError(null);
+  const syncFromBackend = async () => {
     try {
       const res = await getSettings();
-      console.log("Settings loaded:", res);
-
-      if (res && Object.keys(res).length > 0) {
-        setData(res);
+      const clean = extractCleanSettings(res);
+      if (clean && (clean.shop_name || clean.mobile || clean.address)) {
+        setData((prev: any) => ({ ...prev, ...clean }));
+        localStorage.setItem('shop_settings', JSON.stringify(clean));
+        console.log("Synced from backend", clean);
       } else {
-        setData({
-          shop_name: "",
-          mobile: "",
-          address: "",
-          gstin: "",
-          invoice_prefix: "INV",
-        });
+        console.log("Backend returned empty, keeping cached");
       }
     } catch (err) {
-      console.error("Load settings error:", err);
-      setError(t('settings.loadError'));
-      setData({
-        shop_name: "",
-        mobile: "",
-        address: "",
-        gstin: "",
-        invoice_prefix: "INV",
-      });
-    } finally {
-      setLoading(false);
+      console.error("Failed to sync from backend:", err);
     }
   };
+
+  useEffect(() => {
+    syncFromBackend();
+    loadBackups();
+  }, []);
 
   const loadBackups = async () => {
     try {
@@ -95,6 +126,7 @@ export default function Settings() {
     try {
       await restoreBackup(backupName);
       setSuccess(t('settings.restoreSuccess'));
+      await syncFromBackend();
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       setError(t('settings.restoreError'));
@@ -103,27 +135,30 @@ export default function Settings() {
     }
   };
 
-  useEffect(() => {
-    loadSettings();
-    loadBackups();
-  }, []);
-
   const handleSave = async () => {
     if (!data?.shop_name) {
       setError(t('settings.shopNameRequired'));
       return;
     }
-
     setSaving(true);
     setError(null);
     setSuccess(null);
-
     try {
       await saveSettings(data);
+      // Store only the clean settings
+      const toStore = {
+        shop_name: data.shop_name,
+        mobile: data.mobile,
+        address: data.address,
+        gstin: data.gstin,
+        invoice_prefix: data.invoice_prefix,
+        auto_print: data.auto_print,
+      };
+      localStorage.setItem('shop_settings', JSON.stringify(toStore));
       setSuccess(t('settings.saveSuccess'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error("Save settings error:", err);
+      console.error("Save error:", err);
       setError(t('settings.saveError'));
     } finally {
       setSaving(false);
@@ -131,10 +166,24 @@ export default function Settings() {
   };
 
   const handleRefresh = async () => {
-    await loadSettings();
+    await syncFromBackend();
+    await loadBackups();
   };
 
-  if (loading) {
+  const handleTestPrint = async () => {
+    try {
+      const res = await apiPost('/settings/test-print', {});
+      if (res.success) {
+        setSuccess(t('settings.testPrintSuccess'));
+      } else {
+        setError(`${t('settings.testPrintError')}: ${res.error}`);
+      }
+    } catch (err) {
+      setError(t('settings.testPrintError'));
+    }
+  };
+
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -152,10 +201,7 @@ export default function Settings() {
           <div className="bg-red-50 border border-red-200 rounded-xl p-6">
             <IonIcon icon={warningOutline} className="text-5xl text-red-500 mx-auto mb-4" />
             <p className="text-red-700">{t('settings.loadFailed')}</p>
-            <button
-              onClick={loadSettings}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all"
-            >
+            <button onClick={handleRefresh} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">
               {t('settings.retry')}
             </button>
           </div>
@@ -164,33 +210,18 @@ export default function Settings() {
     );
   }
 
-  const handleTestPrint = async () => {
-    try {
-      const res = await apiPost('/settings/test-print', {});
-      if (res.success) {
-        setSuccess(t('settings.testPrintSuccess'));
-      } else {
-        setError(`${t('settings.testPrintError')}: ${res.error}`);
-      }
-    } catch (err) {
-      setError(t('settings.testPrintError'));
-    }
-  };
-
   return (
     <div className="space-y-3">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="font-inter text-start">
-          <h1 className="text-3xl font-bold text-white font-inter">{t('settings.title')}</h1>
-          <p className="text-gray-500 text-sm font-inter">
-            {t('settings.subtitle')}
-          </p>
+          <h1 className="text-3xl font-bold text-white">{t('settings.title')}</h1>
+          <p className="text-gray-500 text-sm">{t('settings.subtitle')}</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2"
         >
           <IonIcon icon={refreshOutline} className="text-xl" />
           <span>{t('settings.refresh')}</span>
@@ -215,75 +246,6 @@ export default function Settings() {
         </button>
       </div>
 
-      {/* Printer Settings (commented - preserved as is) */}
-      {/* <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
-          <h2 className="text-white font-semibold text-lg">🖨️ Printer Settings</h2>
-        </div>
-        <div className="p-6 space-y-4"> */}
-          {/* Printer Type */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Connection Type</label>
-            <select
-              className="w-full border border-gray-300 rounded-lg p-2.5"
-              value={data.printer_type || 'network'}
-              onChange={(e) => setData({ ...data, printer_type: e.target.value })}
-            >
-              <option value="network">WiFi / LAN (Network)</option>
-              <option value="usb">USB (Windows Printer)</option>
-            </select>
-          </div> */}
-
-          {/* Network settings */}
-          {/* {(data.printer_type === 'network' || !data.printer_type) && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Printer IP Address</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg p-2.5"
-                  placeholder="192.168.1.100 or localhost"
-                  value={data.printer_host || 'localhost'}
-                  onChange={(e) => setData({ ...data, printer_host: e.target.value })}
-                />
-                <p className="text-xs text-gray-500 mt-1">Print status page on printer to find IP</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Port</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 rounded-lg p-2.5"
-                  placeholder="9100"
-                  value={data.printer_port || 9100}
-                  onChange={(e) => setData({ ...data, printer_port: Number(e.target.value) })}
-                />
-              </div>
-            </>
-          )} */}
-
-          {/* USB settings */}
-          {/* {data.printer_type === 'usb' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Windows Printer Name</label>
-              <input
-                className="w-full border border-gray-300 rounded-lg p-2.5"
-                placeholder="e.g. POS-80 or XP-80"
-                value={data.printer_name || ''}
-                onChange={(e) => setData({ ...data, printer_name: e.target.value })}
-              />
-              <p className="text-xs text-gray-500 mt-1">Find in Windows → Settings → Printers & Scanners</p>
-            </div>
-          )} */}
-
-          {/* Test print button */}
-          {/* <button
-            onClick={handleTestPrint}
-            className="w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 text-sm"
-          >
-            🖨️ Test Print
-          </button>
-        </div>
-      </div> */}
-
       {/* Success/Error Messages */}
       {success && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700">
@@ -293,7 +255,6 @@ export default function Settings() {
           </div>
         </div>
       )}
-
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
           <div className="flex items-center justify-between">
@@ -301,10 +262,7 @@ export default function Settings() {
               <IonIcon icon={warningOutline} className="text-xl" />
               <p className="text-sm">{error}</p>
             </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
-            >
+            <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
               <IonIcon icon={closeOutline} className="text-lg" />
             </button>
           </div>
@@ -319,9 +277,7 @@ export default function Settings() {
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
               <div className="flex items-center gap-2">
                 <IonIcon icon={businessOutline} className="text-white text-xl" />
-                <h2 className="text-white font-semibold text-lg">
-                  {t('settings.storeInformation')}
-                </h2>
+                <h2 className="text-white font-semibold text-lg">{t('settings.storeInformation')}</h2>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -331,27 +287,22 @@ export default function Settings() {
                 </label>
                 <input
                   placeholder={t('settings.shopNamePlaceholder')}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={data.shop_name || ""}
                   onChange={(e) => setData({ ...data, shop_name: e.target.value })}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('settings.shopNameHelp')}
-                </p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('settings.mobileNumber')}
                 </label>
                 <input
                   placeholder="+91 98765 43210"
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full border border-gray-300 rounded-lg p-2.5"
                   value={data.mobile || ""}
                   onChange={(e) => setData({ ...data, mobile: e.target.value })}
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('settings.address')}
@@ -359,7 +310,7 @@ export default function Settings() {
                 <textarea
                   rows={3}
                   placeholder={t('settings.addressPlaceholder')}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full border border-gray-300 rounded-lg p-2.5"
                   value={data.address || ""}
                   onChange={(e) => setData({ ...data, address: e.target.value })}
                 />
@@ -374,9 +325,7 @@ export default function Settings() {
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
               <div className="flex items-center gap-2">
                 <IonIcon icon={documentTextOutline} className="text-white text-xl" />
-                <h2 className="text-white font-semibold text-lg">
-                  {t('settings.taxInvoiceSettings')}
-                </h2>
+                <h2 className="text-white font-semibold text-lg">{t('settings.taxInvoiceSettings')}</h2>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -386,106 +335,74 @@ export default function Settings() {
                 </label>
                 <input
                   placeholder="22AAAAA0000A1Z"
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
+                  className="w-full border border-gray-300 rounded-lg p-2.5 uppercase"
                   value={data.gstin || ""}
                   onChange={(e) => setData({ ...data, gstin: e.target.value.toUpperCase() })}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('settings.gstinHelp')}
-                </p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('settings.invoicePrefix')}
                 </label>
                 <input
                   placeholder="INV"
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
+                  className="w-full border border-gray-300 rounded-lg p-2.5 uppercase"
                   value={data.invoice_prefix || "INV"}
-                  onChange={(e) =>
-                    setData({ ...data, invoice_prefix: e.target.value.toUpperCase() })
-                  }
+                  onChange={(e) => setData({ ...data, invoice_prefix: e.target.value.toUpperCase() })}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {t('settings.invoicePrefixHelp')}
+                  {t('settings.exampleInvoice')} {data.invoice_prefix || "INV"}-0001
                 </p>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-4 mt-4">
-                <div className="flex items-start gap-2 text-start">
-                  <IonIcon icon={documentTextOutline} className="text-blue-500 text-lg mt-0.5" />
-                  <div>
-                    <p className="text-xs text-blue-600 mt-1">
-                      {t('settings.exampleInvoice')} {data.invoice_prefix || "INV"}-0001
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Additional Info Card */}
-      <div className="grid grid-cols-1 gap-4">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
-            <div className="flex items-center gap-2">
-              <IonIcon icon={businessOutline} className="text-white text-xl" />
-              <h2 className="text-white font-semibold text-lg">
-                {t('settings.businessInformation')}
-              </h2>
-            </div>
+      {/* Business Information (read-only summary) */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <IonIcon icon={businessOutline} className="text-white text-xl" />
+            <h2 className="text-white font-semibold text-lg">{t('settings.businessInformation')}</h2>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-start">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <IonIcon icon={businessOutline} className="text-blue-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{t('settings.businessName')}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {data.shop_name || t('settings.notSet')}
-                  </p>
-                </div>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-start">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <IonIcon icon={businessOutline} className="text-blue-600 text-lg" />
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <IonIcon icon={callOutline} className="text-green-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{t('settings.contactNumber')}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {data.mobile || t('settings.notSet')}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{t('settings.businessName')}</p>
+                <p className="text-sm text-gray-600 mt-1">{data.shop_name || "—"}</p>
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <IonIcon icon={locationOutline} className="text-purple-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{t('settings.addressLabel')}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {data.address || t('settings.notSet')}
-                  </p>
-                </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-green-100 p-2 rounded-lg">
+                <IonIcon icon={callOutline} className="text-green-600 text-lg" />
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-orange-100 p-2 rounded-lg">
-                  <IonIcon icon={pricetagOutline} className="text-orange-600 text-lg" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{t('settings.invoicePrefixLabel')}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {data.invoice_prefix || "INV"}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{t('settings.contactNumber')}</p>
+                <p className="text-sm text-gray-600 mt-1">{data.mobile || "—"}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-purple-100 p-2 rounded-lg">
+                <IonIcon icon={locationOutline} className="text-purple-600 text-lg" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{t('settings.addressLabel')}</p>
+                <p className="text-sm text-gray-600 mt-1">{data.address || "—"}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <IonIcon icon={pricetagOutline} className="text-orange-600 text-lg" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{t('settings.invoicePrefixLabel')}</p>
+                <p className="text-sm text-gray-600 mt-1">{data.invoice_prefix || "INV"}</p>
               </div>
             </div>
           </div>
@@ -493,11 +410,11 @@ export default function Settings() {
       </div>
 
       {/* Save Button */}
-      <div className="">
+      <div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 rounded-xl font-semibold text-lg disabled:opacity-50"
         >
           {saving ? (
             <span className="flex items-center justify-center gap-2">

@@ -5,6 +5,7 @@ import path from 'path';
 import { runMigrations } from './database/migrations/001_initial';
 import { addHsnCode } from './database/migrations/002_hsn';
 import { addAutoPrint } from './database/migrations/003_auto_print';
+import { addSoftDelete } from './database/migrations/005_soft_delete';
 import printingRoutes from './routes/printing';
 
 // Import routes
@@ -51,7 +52,7 @@ runMigrations();
 addHsnCode();
 addAutoPrint();
 upgradeProductsTable();
-
+addSoftDelete();
 const licensed = LicenseService.isLicensed();
 if (!licensed) {
   console.log('⚠️ App not licensed');

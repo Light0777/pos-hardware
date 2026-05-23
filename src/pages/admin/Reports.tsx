@@ -35,12 +35,16 @@ export default function Reports() {
     try {
       setError(null);
       setRefreshing(true);
-      
+
       const [topRes, stockRes, profitRes] = await Promise.allSettled([
         getTopProducts(),
         getStockReport(),
         getProfitReport(),
       ]);
+      if (stockRes.status === "fulfilled" && Array.isArray(stockRes.value)) {
+        console.log("STOCK ITEM SAMPLE:", stockRes.value[0]); // add this line
+        setStock(stockRes.value);
+      }
 
       console.log("Top Products Response:", topRes);
       console.log("Stock Response:", stockRes);
@@ -68,11 +72,11 @@ export default function Reports() {
         setProfit({ revenue: 0, cost: 0, profit: 0 });
       }
 
-      const hasNoData = 
+      const hasNoData =
         (topRes.status !== "fulfilled" || topRes.value?.length === 0) &&
         (stockRes.status !== "fulfilled" || stockRes.value?.length === 0) &&
         (profitRes.status !== "fulfilled" || profitRes.value?.profit === 0);
-      
+
       if (hasNoData) {
         setError(t('reports.noDataError'));
       }
@@ -191,7 +195,7 @@ export default function Reports() {
             </div>
             <div className="w-32">
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-green-500 rounded-full"
                   style={{ width: `${Math.min((profit.profit / profit.revenue) * 100, 100)}%` }}
                 />
@@ -220,12 +224,11 @@ export default function Reports() {
             top.map((p, idx) => (
               <div key={p.product_uuid || idx} className="flex justify-between items-center px-6 py-4 hover:bg-gray-50 transition-all">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    idx === 0 ? "bg-yellow-100 text-yellow-600" :
-                    idx === 1 ? "bg-gray-100 text-gray-600" :
-                    idx === 2 ? "bg-orange-100 text-orange-600" :
-                    "bg-blue-100 text-blue-600"
-                  }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx === 0 ? "bg-yellow-100 text-yellow-600" :
+                      idx === 1 ? "bg-gray-100 text-gray-600" :
+                        idx === 2 ? "bg-orange-100 text-orange-600" :
+                          "bg-blue-100 text-blue-600"
+                    }`}>
                     {idx + 1}
                   </div>
                   <div>
@@ -264,7 +267,7 @@ export default function Reports() {
               const isLow = stockLevel <= 10 && stockLevel > 0;
               const isOut = stockLevel === 0;
               const stockPercentage = Math.min((stockLevel / 50) * 100, 100);
-              
+
               return (
                 <div key={s.product_uuid || i} className="px-6 py-4 hover:bg-gray-50 transition-all">
                   <div className="flex justify-between items-center mb-2">
@@ -273,9 +276,8 @@ export default function Reports() {
                       {s.sku && <p className="text-xs text-gray-400">{t('reports.skuLabel')}: {s.sku}</p>}
                     </div>
                     <div className="text-right">
-                      <span className={`font-semibold ${
-                        isOut ? "text-red-600" : isLow ? "text-orange-600" : "text-green-600"
-                      }`}>
+                      <span className={`font-semibold ${isOut ? "text-red-600" : isLow ? "text-orange-600" : "text-green-600"
+                        }`}>
                         {stockLevel} {t('reports.units')}
                       </span>
                       <div className="mt-1">
@@ -302,9 +304,8 @@ export default function Reports() {
                     <div className="w-full mt-2">
                       <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            isLow ? "bg-orange-500" : "bg-green-500"
-                          }`}
+                          className={`h-full rounded-full transition-all duration-500 ${isLow ? "bg-orange-500" : "bg-green-500"
+                            }`}
                           style={{ width: `${stockPercentage}%` }}
                         />
                       </div>

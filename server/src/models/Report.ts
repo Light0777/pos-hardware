@@ -145,10 +145,11 @@ export class ReportModel {
   // Stock report
   static getStockReport(month?: string) {
     return db.prepare(`
-      SELECT name, stock, price 
-      FROM products
-      ORDER BY name ASC
-    `).all();
+    SELECT name, stock, price 
+    FROM products
+    WHERE is_deleted = 0
+    ORDER BY name ASC
+  `).all();
   }
 
   // Profit estimation
